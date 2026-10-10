@@ -12,6 +12,8 @@ AUTH=(-allowProvisioningUpdates -authenticationKeyPath "$ASC_KEY_FILE"
 OUT=build/release; rm -rf "$OUT"; mkdir -p "$OUT"
 
 ./scripts/sync-web.sh
+# Expo writes CFBundleVersion from app.json, so the build number lives there.
+node -e 'const f="app.json",j=require("./"+f);j.expo.ios.buildNumber=process.argv[1];require("fs").writeFileSync(f,JSON.stringify(j,null,2)+"\n")' "$BUILD"
 npx expo prebuild -p ios --clean >/dev/null
 
 xcodebuild -workspace ios/StarMap.xcworkspace -scheme StarMap -configuration Release \

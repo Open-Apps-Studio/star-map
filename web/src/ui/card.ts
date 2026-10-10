@@ -200,12 +200,17 @@ function setExpanded(on: boolean) {
 }
 
 // ---------------------------------------------------------------- actions
-function zoomFor(kind: IconKind): number {
+/** Field of view (degrees) that frames an object nicely when centred. */
+function zoomFor(kind: IconKind, obj?: SweObj): number {
+  if (kind === "planet" && obj) {
+    // Fill ~40% of the short side with the disc (rings included for Saturn).
+    const r = obj.getInfo("radius") as number; // angular radius, radians
+    if (typeof r === "number" && r > 0) return Math.max(0.002, ((r * 2) / 0.4) * (displayName(obj) === "Saturn" ? 2.3 : 1) / D2R);
+  }
   switch (kind) {
     case "constellation": return 50;
     case "galaxy": case "nebula": case "cluster": return 8;
-    case "moon": case "sun": return 3;
-    case "planet": return 1.5;
+    case "moon": case "sun": return 0.9;
     case "satellite": return 10;
     default: return 20;
   }
@@ -220,8 +225,8 @@ function center() {
   }
   app.stel.pointAndLock(current, 1.0);
   const fov = (app.core.fov as number) / D2R;
-  const target = zoomFor(iconKind(current));
-  if (fov > target * 1.5) app.stel.zoomTo(target * D2R, 1.4);
+  const target = zoomFor(iconKind(current), current);
+  if (fov > target * 1.5) app.stel.zoomTo(target * D2R, 2.2);
   setCentred(true);
 }
 

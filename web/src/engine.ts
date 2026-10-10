@@ -78,6 +78,11 @@ export function bootEngine(canvas: HTMLCanvasElement): Promise<Stel> {
         core.planets.addDataSource({ url: sky("surveys/sso/sun"), key: "sun" });
         core.planets.addDataSource({ url: sky("surveys/sso/moon"), key: "default" });
         core.comets.addDataSource({ url: sky("CometEls.txt"), key: "mpc_comets" });
+        // Planet surfaces (our own HiPS from CC BY 4.0 maps; Saturn's rings
+        // texture ships with the engine).
+        for (const p of ["mercury", "venus", "mars", "jupiter", "saturn", "uranus", "neptune"]) {
+          core.planets.addDataSource({ url: sky("planets/" + p), key: p });
+        }
         core.satellites.addDataSource({ url: sky("tle_satellite.jsonl.gz"), key: "jsonl/sat" });
         // The engine's built-in Noto Sans fonts are used. (An external TTF via
         // setFont used to crash: emscripten 6 defaults to a 64 KB stack; the

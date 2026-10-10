@@ -14,3 +14,5 @@ curl -sf --max-time 20 -o public/skydata/CometEls.txt.new https://www.minorplane
   && [ "$(wc -l < public/skydata/CometEls.txt.new)" -gt 100 ] && mv public/skydata/CometEls.txt.new public/skydata/CometEls.txt \
   || { rm -f public/skydata/CometEls.txt.new; echo "comet refresh skipped"; }
 cp ../engine/apps/simple-html/static/fonts/Roboto-*.ttf public/fonts/ 2>/dev/null || true
+# Planet surface textures (HiPS order 0, generated from CC BY 4.0 maps).
+rsync -a ../data/planets/ public/skydata/planets/
