@@ -109,6 +109,25 @@ export function azAlt(stel: Stel, obj: SweObj): { az: number; alt: number } {
   return { az: stel.anp(az), alt: stel.anpm(alt) };
 }
 
+/**
+ * Run `fn` with a scratch copy of the observer (same place, settable time),
+ * so time-sampling maths never touches the live view. Released afterwards.
+ */
+export function withObserverCopy<T>(stel: Stel, fn: (obs: any) => T): T {
+  const copy = (stel.observer as any).clone();
+  try {
+    return fn(copy);
+  } finally {
+    copy.destroy?.();
+  }
+}
+
+/** Altitude (radians) of `obj` for an observer at its own time. */
+export function altitudeFor(stel: Stel, obj: SweObj, obs: any): number {
+  const p = stel.convertFrame(obs, "ICRF", "OBSERVED", obj.getInfo("radec", obs));
+  return stel.anpm(stel.c2s(p)[1]);
+}
+
 /** Right ascension / declination (radians, of date) for rise/set maths. */
 export function raDec(stel: Stel, obj: SweObj): { ra: number; dec: number } {
   const obs = stel.observer;

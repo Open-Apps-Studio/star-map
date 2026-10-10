@@ -7,5 +7,5 @@ import { viteSingleFile } from "vite-plugin-singlefile";
 export default defineConfig({
   base: "./",
   plugins: [viteSingleFile({ removeViteModuleLoader: true })],
-  build: { target: "es2020", assetsInlineLimit: 0 },
+  build: { target: "es2020" },
 });

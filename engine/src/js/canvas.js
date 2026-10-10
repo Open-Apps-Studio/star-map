@@ -24,20 +24,27 @@ Module.afterInit(function() {
     // Check for canvas resize
     var canvas = Module.canvas;
 
-    // Get the device pixel ratio, falling back to 1.
+    // Get the device pixel ratio, falling back to 1. Module.maxPixelRatio
+    // (optional) caps it to trade sharpness for speed.
     var dpr = window.devicePixelRatio || 1;
+    if (Module.maxPixelRatio) dpr = Math.min(dpr, Module.maxPixelRatio);
 
     // Get the size of the canvas in CSS pixels.
     var rect = canvas.getBoundingClientRect();
 
     var displayWidth  = rect.width;
     var displayHeight = rect.height;
-    var sizeChanged = (canvas.width  !== displayWidth) ||
-                      (canvas.height !== displayHeight);
+    // Star Map fix: compare against the backing-store size in device pixels.
+    // Upstream compared device pixels to CSS pixels, so on any dpr > 1 screen
+    // (every phone) it reallocated the WebGL canvas on every single frame.
+    var targetWidth = Math.round(displayWidth * dpr);
+    var targetHeight = Math.round(displayHeight * dpr);
+    var sizeChanged = (canvas.width  !== targetWidth) ||
+                      (canvas.height !== targetHeight);
 
     if (sizeChanged) {
-      canvas.width = displayWidth * dpr;
-      canvas.height = displayHeight * dpr;
+      canvas.width = targetWidth;
+      canvas.height = targetHeight;
     }
 
     // TODO: manage paning and flicking here
