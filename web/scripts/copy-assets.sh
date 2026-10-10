@@ -4,7 +4,7 @@ set -e
 cd "$(dirname "$0")/.."
 E=../engine
 mkdir -p public/engine public/skydata
-cp $E/build/stellarium-web-engine.js $E/build/stellarium-web-engine.wasm public/engine/
+cp $E/build/stellarium-web-engine.js public/engine/   # wasm is embedded (SINGLE_FILE)
 rsync -a --delete $E/apps/test-skydata/ public/skydata/
 # Fresh satellite orbits (the bundled ones are from 2020). Offline? Keep old.
 python3 ./scripts/update-satellites.py $E/apps/test-skydata/tle_satellite.jsonl.gz public/skydata/tle_satellite.jsonl.gz \

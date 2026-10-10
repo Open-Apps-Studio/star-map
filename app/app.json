@@ -1,38 +1,43 @@
 {
   "expo": {
-    "name": "app",
-    "slug": "app",
-    "version": "1.0.0",
+    "name": "Star Map",
+    "slug": "star-map",
+    "owner": "ahmet909",
+    "version": "0.1.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "app",
-    "userInterfaceStyle": "automatic",
+    "scheme": "starmap",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#05070d",
     "ios": {
-      "icon": "./assets/expo.icon"
+      "bundleIdentifier": "com.ahmet.starmap",
+      "supportsTablet": false,
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Star Map uses your location to show the sky exactly as it looks where you are.",
+        "NSMotionUsageDescription": "Star Map uses motion sensors so the sky follows your phone when you point it up.",
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
-      "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/images/android-icon-foreground.png",
-        "backgroundImage": "./assets/images/android-icon-background.png",
-        "monochromeImage": "./assets/images/android-icon-monochrome.png"
-      },
-      "predictiveBackGestureEnabled": false
-    },
-    "web": {
-      "output": "static",
-      "favicon": "./assets/images/favicon.png"
+      "package": "com.ahmet.starmap"
     },
     "plugins": [
       "expo-router",
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#208AEF",
+          "backgroundColor": "#05070d",
           "image": "./assets/images/splash-icon.png",
-          "imageWidth": 76
+          "imageWidth": 120
         }
-      ]
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Star Map uses your location to show the sky exactly as it looks where you are."
+        }
+      ],
+      "./plugins/with-sky-bundle.js"
     ],
     "experiments": {
       "typedRoutes": true,

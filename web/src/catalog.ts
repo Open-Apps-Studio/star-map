@@ -106,9 +106,23 @@ const DEEP_SKY: [string, string, string[]?, string?][] = [
 ];
 
 /** Constellations come from the sky culture file (88, with English names). */
+/**
+ * XHR rather than fetch: inside the iOS app the page runs from file://, where
+ * WKWebView allows XHR (with file access enabled) but blocks fetch().
+ */
+function getJson(url: string): Promise<any> {
+  return new Promise((resolve, reject) => {
+    const x = new XMLHttpRequest();
+    x.open("GET", url);
+    x.responseType = "json";
+    x.onload = () => ((x.status === 200 || x.status === 0) && x.response ? resolve(x.response) : reject(new Error(`GET ${url} ${x.status}`)));
+    x.onerror = () => reject(new Error(`GET ${url} failed`));
+    x.send();
+  });
+}
+
 async function loadConstellations(skyBase: string): Promise<Entry[]> {
-  const res = await fetch(skyBase + "skycultures/western/index.json");
-  const data = await res.json();
+  const data = await getJson(skyBase + "skycultures/western/index.json");
   return (data.constellations as any[]).map((c) => ({
     name: c.common_name?.native ?? c.iau,
     aliases: [c.common_name?.english, c.iau].filter(Boolean),

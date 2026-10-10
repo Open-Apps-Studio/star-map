@@ -2,8 +2,8 @@ node_modules/
 .expo/
 dist/
 web/dist/
-ios/
-android/
+/app/ios/
+/app/android/
 engine/build/
 engine/.sconsign.dblite
 *.o

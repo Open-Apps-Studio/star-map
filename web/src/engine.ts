@@ -61,6 +61,7 @@ export function bootEngine(canvas: HTMLCanvasElement): Promise<Stel> {
       return;
     }
     StelWebEngine({
+      // Ignored: the wasm is embedded in the engine script (SINGLE_FILE build).
       wasmFile: abs("engine/stellarium-web-engine.wasm"),
       canvas,
       translateFn: (_domain, str) => str,

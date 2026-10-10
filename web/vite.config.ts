@@ -1,4 +1,11 @@
 import { defineConfig } from "vite";
+import { viteSingleFile } from "vite-plugin-singlefile";
 
-// Relative base so the built page also works from file:// inside the app's WebView.
-export default defineConfig({ base: "./", build: { target: "es2020", assetsInlineLimit: 0 } });
+// One self-contained index.html (JS + CSS inlined) so the iOS app can load
+// it from file:// inside a WebView: no module fetches, no server needed.
+// The engine script and sky data stay as plain files next to it.
+export default defineConfig({
+  base: "./",
+  plugins: [viteSingleFile({ removeViteModuleLoader: true })],
+  build: { target: "es2020", assetsInlineLimit: 0 },
+});
