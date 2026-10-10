@@ -19,7 +19,11 @@
       }
     },
     "android": {
-      "package": "com.ahmet.starmap"
+      "package": "com.ahmet.starmap",
+      "permissions": [
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION"
+      ]
     },
     "plugins": [
       "expo-router",
@@ -43,6 +47,12 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "5ecf67b7-1aa7-4ec2-ad01-3119be3eb86c"
+      }
     }
   }
 }
