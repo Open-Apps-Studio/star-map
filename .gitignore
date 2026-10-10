@@ -1,0 +1,14 @@
+node_modules/
+.expo/
+dist/
+web/dist/
+ios/
+android/
+engine/build/
+engine/.sconsign.dblite
+*.o
+.DS_Store
+.env
+.env.*
+AGENTS.md
+CLAUDE.md
