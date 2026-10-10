@@ -119,8 +119,9 @@ async function main() {
   // Tapping the sky closes any open panel (the engine handles selection).
   canvas.addEventListener("pointerdown", () => openPanel(null), { capture: true });
 
-  app.stel.change((_obj, attr) => {
-    if (attr !== "selection") return;
+  // Listen to core.selection only: a catch-all listener makes the engine
+  // build a JS wrapper on every attribute change (each pinch/clock frame).
+  app.core.change("selection", () => {
     const sel = app.core.selection as SweObj | null;
     showCard(sel && sel.v ? sel : null);
   });

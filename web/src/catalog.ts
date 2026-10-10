@@ -199,7 +199,12 @@ export function resolve(stel: Stel, e: Entry): SweObj | null {
   for (const id of e.ids) {
     try {
       const hip = /^HIP (\d+)$/.exec(id);
-      const o = hip ? starByHip(stel, Number(hip[1])) : stel.getObj(id);
+      // Constellations are direct children of the module (no full scan).
+      const o = hip
+        ? starByHip(stel, Number(hip[1]))
+        : id.startsWith("CON ")
+          ? (((stel.core as any).constellations[id] as SweObj | undefined) ?? null)
+          : stel.getObj(id);
       if (o) {
         resolved.set(e, o);
         return o;

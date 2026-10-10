@@ -117,6 +117,27 @@ function distanceText(au: number): string {
   return `${(ly / 1e6).toFixed(1)} million light-years`;
 }
 
+/**
+ * Rise/set rows, cached per object and recomputed only when the view time
+ * moves by more than ~10 minutes (the event solver is not free).
+ */
+let rsCache: { v: number; utc: number; rows: [string, string][] } | null = null;
+function riseSetRows(obj: SweObj): [string, string][] {
+  if (iconKind(obj) === "constellation") return [];
+  if (rsCache && rsCache.v === obj.v && Math.abs(rsCache.utc - app.obs.utc) < 10 / 1440) return rsCache.rows;
+  const rows: [string, string][] = [];
+  const ttMinusUtc = app.obs.tt - app.obs.utc;
+  const vis = obj.computeVisibility({ startTime: app.obs.tt, endTime: app.obs.tt + 1 });
+  if (!vis.length) rows.push(["Rise / set", "Doesn't rise today"]);
+  else if (vis[0].rise == null && vis[0].set == null) rows.push(["Rise / set", "Up all day"]);
+  else {
+    if (vis[0].rise != null) rows.push(["Rises", fmtTime(vis[0].rise - ttMinusUtc)]);
+    if (vis[0].set != null) rows.push(["Sets", fmtTime(vis[0].set - ttMinusUtc)]);
+  }
+  rsCache = { v: obj.v, utc: app.obs.utc, rows };
+  return rows;
+}
+
 /** Facts shown when the card is expanded. Cheap enough to refresh 4×/s. */
 export function updateFacts() {
   const obj = current;
@@ -133,16 +154,7 @@ export function updateFacts() {
   const dist = obj.getInfo("distance");
   if (typeof dist === "number" && dist > 0) rows.push(["Distance", distanceText(dist)]);
   if (iconKind(obj) === "moon") rows.push(["Illuminated", `${Math.round((obj.getInfo("phase") as number) * 100)}%`]);
-  if (iconKind(obj) !== "constellation") {
-    const ttMinusUtc = app.obs.tt - app.obs.utc;
-    const vis = obj.computeVisibility({ startTime: app.obs.tt, endTime: app.obs.tt + 1 });
-    if (!vis.length) rows.push(["Rise / set", "Doesn't rise today"]);
-    else if (vis[0].rise == null && vis[0].set == null) rows.push(["Rise / set", "Up all day"]);
-    else {
-      if (vis[0].rise != null) rows.push(["Rises", fmtTime(vis[0].rise - ttMinusUtc)]);
-      if (vis[0].set != null) rows.push(["Sets", fmtTime(vis[0].set - ttMinusUtc)]);
-    }
-  }
+  rows.push(...riseSetRows(obj));
   const aka = obj
     .designations()
     .slice(0, 6)
@@ -257,6 +269,7 @@ export function initCard() {
   card.addEventListener("pointermove", (e) => {
     if (startY != null && Math.abs(e.clientY - startY) > 8) moved = true;
   });
+  card.addEventListener("pointercancel", () => (startY = null));
   card.addEventListener("pointerup", (e) => {
     if (startY == null) return;
     const dy = e.clientY - startY;

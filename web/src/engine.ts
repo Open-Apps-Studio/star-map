@@ -76,7 +76,6 @@ export function bootEngine(canvas: HTMLCanvasElement): Promise<Stel> {
         core.minor_planets.addDataSource({ url: sky("mpcorb.dat"), key: "mpc_asteroids" });
         core.planets.addDataSource({ url: sky("surveys/sso/moon"), key: "moon" });
         core.planets.addDataSource({ url: sky("surveys/sso/sun"), key: "sun" });
-        core.planets.addDataSource({ url: sky("surveys/sso/moon"), key: "default" });
         core.comets.addDataSource({ url: sky("CometEls.txt"), key: "mpc_comets" });
         // Planet surfaces (our own HiPS from CC BY 4.0 maps; Saturn's rings
         // texture ships with the engine).

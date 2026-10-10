@@ -51,7 +51,14 @@ function step(unit: string, dir: 1 | -1) {
   const d = mjdToDate(app.obs.utc);
   switch (unit) {
     case "year": d.setFullYear(d.getFullYear() + dir); break;
-    case "month": d.setMonth(d.getMonth() + dir); break;
+    case "month": {
+      // Clamp the day so 31 Jan + 1 month is 28/29 Feb, not 3 Mar.
+      const day = d.getDate();
+      d.setDate(1);
+      d.setMonth(d.getMonth() + dir);
+      d.setDate(Math.min(day, new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate()));
+      break;
+    }
     case "day": d.setDate(d.getDate() + dir); break;
     case "hour": d.setHours(d.getHours() + dir); break;
     case "minute": d.setMinutes(d.getMinutes() + dir); break;
@@ -81,6 +88,7 @@ function repeatOnHold(el: HTMLElement, fn: () => void) {
     timer = window.setTimeout(tick, delay);
   });
   for (const ev of ["pointerup", "pointerleave", "pointercancel"]) el.addEventListener(ev, stop);
+  document.addEventListener("visibilitychange", stop);
 }
 
 // ---------------------------------------------------------------- speed

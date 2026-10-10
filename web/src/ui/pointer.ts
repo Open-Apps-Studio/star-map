@@ -13,10 +13,14 @@ import { inApp, post } from "../bridge";
 const D2R = Math.PI / 180;
 const R2D = 180 / Math.PI;
 
+/** Last view pushed from the sensors (avoids reading it back from the engine). */
+let lastView: { yaw: number; pitch: number; roll: number } | null = null;
+
 export const sensors = createSensors((v) => {
   app.obs.yaw = v.yaw;
   app.obs.pitch = v.pitch;
   app.obs.roll = v.roll;
+  lastView = v;
 });
 
 let target: SweObj | null = null;
@@ -27,7 +31,8 @@ const dot = (a: Vec3, b: Vec3) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
 
 /** Camera basis from the engine's yaw/pitch/roll. */
 function basis() {
-  const y = app.obs.yaw as number, p = app.obs.pitch as number, r = (app.obs.roll as number) || 0;
+  const v = lastView ?? { yaw: app.obs.yaw as number, pitch: app.obs.pitch as number, roll: (app.obs.roll as number) || 0 };
+  const y = v.yaw, p = v.pitch, r = v.roll;
   const forward = enu(y, p);
   const refUp: Vec3 = [-Math.sin(p) * Math.sin(y), -Math.sin(p) * Math.cos(y), Math.cos(p)];
   const refRight: Vec3 = [Math.cos(y), -Math.sin(y), 0];
@@ -51,6 +56,8 @@ export async function setPointing(on: boolean) {
       return;
     }
     app.core.lock = 0;
+    app.obs.view_offset_alt = 0;
+    lastView = null;
     // A comfortable "window" zoom if the user was zoomed far out.
     if ((app.core.fov as number) > 100 * D2R) app.stel.zoomTo(70 * D2R, 0.6);
   } else {
@@ -68,7 +75,8 @@ export async function setPointing(on: boolean) {
 /** Per-frame update while pointing. Pure transforms, no layout reads. */
 export function updatePointer() {
   if (!app.pointing) return;
-  $("pointer-alt").textContent = `${Math.round((app.obs.pitch as number) * R2D)}°`;
+  if (!lastView) return;
+  $("pointer-alt").textContent = `${Math.round(lastView.pitch * R2D)}°`;
   const pointer = $("pointer");
   const tri = $("pointer-tri") as unknown as SVGElement;
   if (!target) {
