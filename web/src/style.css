@@ -195,5 +195,7 @@ body.sensor #card-find .x { display: none; }
 body.night #night-filter { opacity: 1; }
 body.night { --accent: #ff6b6b; --accent-2: #ff3b3b; --good: #ff8a8a; }
 
-/* Phone mode hides the time bar clutter a bit so the sky is the hero. */
-body.sensor .tonight { opacity: 0.85; }
+/* Phone mode: the sky is the hero. Hide the time bar and Tonight strip, and
+   drop the card low so the centre ring stays visible. */
+body.sensor .tonight, body.sensor .bar { display: none; }
+body.sensor .card { bottom: calc(var(--bottom) + 84px); }

@@ -89,12 +89,15 @@ async function setSensorMode(on: boolean) {
       return;
     }
     core.lock = 0;
-    stel.zoomTo(70 * D2R, 0.6);
+    // ~40° across the short side feels like looking through a window.
+    stel.zoomTo(40 * D2R, 0.6);
+    core.selection = 0;
     document.body.classList.add("sensor");
     toast("Hold your phone up to the sky");
   } else {
     sensors.stop();
     obs.roll = 0;
+    guideTarget = null;
     document.body.classList.remove("sensor");
   }
   pointBtn.setAttribute("aria-pressed", String(on));
@@ -126,7 +129,9 @@ function targetOffsetFrac(): number {
   if (!cardObj || sensors.active) return 0;
   const h = window.innerHeight;
   const cardTop = card.getBoundingClientRect().top;
-  return Math.max(0, (h / 2 - cardTop / 2) / h);
+  // Pixels to shift, as a fraction of the screen's short side (the engine's
+  // fov spans the short side: width in portrait, height in landscape).
+  return Math.max(0, (h / 2 - cardTop / 2) / Math.min(h, window.innerWidth));
 }
 
 // ---------------------------------------------------------------- frame loop
@@ -283,13 +288,15 @@ $("card-find").addEventListener("click", () => {
 function findObject(obj: SweObj, name: string, kind?: Kind) {
   const first = obj.designations()[0];
   if (first) knownNames.set(first, name);
-  core.selection = obj;
   if (sensors.active) {
+    // Phone mode: guide first, show the card once it's centred.
+    core.selection = 0;
     guideTarget = { obj, name };
     guideLockedAt = 0;
     toast(`Follow the arrow to ${name}`);
     return;
   }
+  core.selection = obj;
   stel.pointAndLock(obj, 1.2);
   const fov = kind === "constellation" ? 60 : kind === "deep-sky" ? 12 : kind === "planet" ? 25 : 35;
   stel.zoomTo(fov * D2R, 1.6);
@@ -439,9 +446,11 @@ function faceBestTarget() {
     const mag = o.getInfo("vmag") as number;
     if (!best || mag < best.mag) best = { az, mag };
   }
-  const fov = core.fov as number;
+  // fov spans the short side; keep portrait phones from looking fisheye.
+  const portrait = window.innerHeight > window.innerWidth;
+  core.fov = (portrait ? 75 : 100) * D2R;
   obs.yaw = best ? best.az : Math.PI;
-  obs.pitch = fov / 2 - 8 * D2R;
+  obs.pitch = (portrait ? 48 : 42) * D2R;
 }
 
 // ---------------------------------------------------------------- tonight strip
@@ -556,7 +565,7 @@ async function main() {
     if (attr === "selection") {
       const sel = core.selection as SweObj | null;
       showCard(sel && sel.v ? sel : null);
-      if (!sel) guideTarget = null;
+      if (!sel && !sensors.active) guideTarget = null;
     }
   });
 
