@@ -96,10 +96,18 @@ static int load_jsonl_data(satellites_t *sats, const char *data, int size,
 
     // XXX: should use a more robust gz uncompression function for external
     // data.
-    uncompressed_data = z_uncompress_gz(data, size, &size);
-    if (!uncompressed_data) {
-        LOG_E("Cannot uncompress gz file: %s", url);
-        return -1;
+    // Web servers often serve .gz files with Content-Encoding: gzip, so the
+    // browser hands us plain text. Only inflate when the gzip magic is there.
+    if (size >= 2 && (uint8_t)data[0] == 0x1f && (uint8_t)data[1] == 0x8b) {
+        uncompressed_data = z_uncompress_gz(data, size, &size);
+        if (!uncompressed_data) {
+            LOG_E("Cannot uncompress gz file: %s", url);
+            return -1;
+        }
+    } else {
+        uncompressed_data = malloc(size + 1);
+        memcpy(uncompressed_data, data, size);
+        uncompressed_data[size] = '\0';
     }
 
     data = uncompressed_data;

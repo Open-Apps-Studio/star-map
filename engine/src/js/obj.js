@@ -367,7 +367,7 @@ Module.afterInit(function() {
     let size = Module.lengthBytesUTF8(str);
     let ptr = Module._malloc(size + 1);
     // For speed, we only support ascii strings for the moment.
-    Module.writeAsciiToMemory(str, ptr, false);
+    Module.stringToUTF8(str, ptr, size + 1);
     return ptr;
   }
 

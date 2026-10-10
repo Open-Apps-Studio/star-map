@@ -30,9 +30,8 @@ if len(sys.argv) > 1:
     ROOT = sys.argv[1]
     DEST = sys.argv[2]
 
-if os.path.dirname(__file__) != "./tools":
-    print("Should be run from root directory")
-    sys.exit(-1)
+# Newer Pythons give an absolute __file__, so just run from the repo root.
+os.chdir(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
 
 TYPES = {
     "png": {"text": False, "compress": False},

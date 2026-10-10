@@ -921,6 +921,8 @@ static int stars_add_data_source(obj_t *obj, const char *url, const char *key)
     return 0;
 }
 
+// Exported so the JS search can resolve named stars by HIP number (Star Map).
+EMSCRIPTEN_KEEPALIVE
 obj_t *obj_get_by_hip(int hip, int *code)
 {
     int order, pix, i;
