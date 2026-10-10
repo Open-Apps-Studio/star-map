@@ -6,7 +6,11 @@ import type { Mat3 } from "./sensors";
 
 export type NativeIn =
   | { type: "motion"; m: Mat3 }
-  | { type: "location"; lat: number; lon: number; alt?: number };
+  | { type: "location"; lat: number; lon: number; alt?: number }
+  /** Compass needs calibrating (CoreMotion reports it uncalibrated). */
+  | { type: "calibrate" }
+  /** No location permission: orientation is magnetic, not true, north. */
+  | { type: "north"; magnetic: boolean };
 
 export type NativeOut =
   | { type: "haptic"; style: "light" | "medium" | "success" | "selection" }

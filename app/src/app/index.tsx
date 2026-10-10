@@ -35,10 +35,18 @@ export default function Sky() {
     web.current?.injectJavaScript(`window.__starmap&&window.__starmap.onNative(${JSON.stringify(msg)});true;`);
   }, []);
 
+  /** Resolves once the location prompt is answered; true-north motion needs it. */
+  const locationGranted = useRef<Promise<boolean> | null>(null);
+  const askLocation = useCallback(() => {
+    locationGranted.current ??= Location.requestForegroundPermissionsAsync()
+      .then((r) => r.status === "granted")
+      .catch(() => false);
+    return locationGranted.current;
+  }, []);
+
   const sendLocation = useCallback(async () => {
     try {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== "granted") return;
+      if (!(await askLocation())) return;
       const last = await Location.getLastKnownPositionAsync();
       if (last) send({ type: "location", lat: last.coords.latitude, lon: last.coords.longitude, alt: last.coords.altitude ?? 0 });
       const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
@@ -46,23 +54,40 @@ export default function Sky() {
     } catch {
       /* the page falls back to its saved or default location */
     }
-  }, [send]);
+  }, [send, askLocation]);
 
   const setMotion = useCallback(
-    (on: boolean) => {
+    async (on: boolean) => {
       motionSub.current?.remove();
       motionSub.current = null;
       StarMotion.stop();
       if (!on || !StarMotion.isAvailable()) return;
+      const trueNorth = await askLocation();
+      if (!trueNorth) send({ type: "north", magnetic: true });
       // Round to keep the injected JS small; 4 decimals is ~0.006°.
       const r = (x: number) => Math.round(x * 1e4) / 1e4;
-      motionSub.current = StarMotion.addListener((e) => send({ type: "motion", m: e.m.map((row) => row.map(r)) })) ?? null;
-      StarMotion.start(60);
+      let warned = false;
+      motionSub.current =
+        StarMotion.addListener((e) => {
+          send({ type: "motion", m: e.m.map((row) => row.map(r)) });
+          // CMMagneticFieldCalibrationAccuracy: -1 = uncalibrated.
+          if (e.acc === -1 && !warned) {
+            warned = true;
+            send({ type: "calibrate" });
+          }
+        }) ?? null;
+      StarMotion.start(60, trueNorth);
     },
-    [send],
+    [send, askLocation],
   );
 
-  useEffect(() => () => setMotion(false), [setMotion]);
+  useEffect(
+    () => () => {
+      motionSub.current?.remove();
+      StarMotion.stop();
+    },
+    [],
+  );
 
   const onMessage = useCallback(
     (e: WebViewMessageEvent) => {
@@ -103,6 +128,10 @@ export default function Sky() {
         contentInsetAdjustmentBehavior="never"
         automaticallyAdjustContentInsets={false}
         allowsInlineMediaPlayback
+        // Native feel: no web-form toolbar above the keyboard, no link previews.
+        hideKeyboardAccessoryView
+        allowsLinkPreview={false}
+        textInteractionEnabled
         javaScriptEnabled
         webviewDebuggingEnabled={__DEV__}
         // Dark until the page paints, so there's no white flash.

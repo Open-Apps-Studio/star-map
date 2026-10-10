@@ -37,7 +37,8 @@
           "locationWhenInUsePermission": "Star Map uses your location to show the sky exactly as it looks where you are."
         }
       ],
-      "./plugins/with-sky-bundle.js"
+      "./plugins/with-sky-bundle.js",
+      "./plugins/with-scene-lifecycle.js"
     ],
     "experiments": {
       "typedRoutes": true,

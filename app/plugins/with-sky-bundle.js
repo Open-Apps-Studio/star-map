@@ -26,6 +26,13 @@ module.exports = function withSkyBundle(config) {
         ].join("\n"),
       });
     }
+    // The phase reads ../sky outside the project; make sure Xcode's user
+    // script sandboxing can't block it.
+    const configs = project.pbxXCBuildConfigurationSection();
+    for (const key of Object.keys(configs)) {
+      const bs = configs[key] && configs[key].buildSettings;
+      if (bs && bs.PRODUCT_NAME) bs.ENABLE_USER_SCRIPT_SANDBOXING = "NO";
+    }
     return cfg;
   });
 };

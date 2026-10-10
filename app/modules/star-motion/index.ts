@@ -5,7 +5,7 @@ export type MotionEvent = { m: number[][]; acc: number };
 
 type StarMotionNative = {
   isAvailable(): boolean;
-  start(hz: number): void;
+  start(hz: number, trueNorth: boolean): void;
   stop(): void;
   addListener(event: "onMotion", cb: (e: MotionEvent) => void): EventSubscription;
 };
@@ -14,7 +14,7 @@ const native = requireOptionalNativeModule<StarMotionNative>("StarMotion");
 
 export const StarMotion = {
   isAvailable: () => !!native?.isAvailable(),
-  start: (hz = 60) => native?.start(hz),
+  start: (hz = 60, trueNorth = true) => native?.start(hz, trueNorth),
   stop: () => native?.stop(),
   addListener: (cb: (e: MotionEvent) => void) => native?.addListener("onMotion", cb),
 };

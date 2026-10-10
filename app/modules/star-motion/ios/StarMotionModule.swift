@@ -21,11 +21,14 @@ public class StarMotionModule: Module {
 
     Function("isAvailable") { () -> Bool in
       self.manager.isDeviceMotionAvailable
-        && CMMotionManager.availableAttitudeReferenceFrames().contains(.xTrueNorthZVertical)
+        && CMMotionManager.availableAttitudeReferenceFrames().contains(.xMagneticNorthZVertical)
     }
 
-    Function("start") { (hz: Double) in
-      self.start(hz: hz)
+    /// trueNorth needs a known location (iOS ties the true-north frame to it);
+    /// without location permission use magnetic north and let the page
+    /// correct for declination.
+    Function("start") { (hz: Double, trueNorth: Bool) in
+      self.start(hz: hz, trueNorth: trueNorth)
     }
 
     Function("stop") {
@@ -37,13 +40,15 @@ public class StarMotionModule: Module {
     }
   }
 
-  private func start(hz: Double) {
+  private func start(hz: Double, trueNorth: Bool) {
     guard manager.isDeviceMotionAvailable else { return }
     manager.deviceMotionUpdateInterval = 1.0 / max(10, min(hz, 120))
+    // Let iOS show its figure-8 compass calibration prompt when needed.
+    manager.showsDeviceMovementDisplay = true
     queue.maxConcurrentOperationCount = 1
+    let frames = CMMotionManager.availableAttitudeReferenceFrames()
     let frame: CMAttitudeReferenceFrame =
-      CMMotionManager.availableAttitudeReferenceFrames().contains(.xTrueNorthZVertical)
-      ? .xTrueNorthZVertical : .xMagneticNorthZVertical
+      trueNorth && frames.contains(.xTrueNorthZVertical) ? .xTrueNorthZVertical : .xMagneticNorthZVertical
     manager.startDeviceMotionUpdates(using: frame, to: queue) { [weak self] motion, _ in
       guard let self, let motion else { return }
       self.emit(motion)

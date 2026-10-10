@@ -582,6 +582,8 @@ async function main() {
   listen((msg) => {
     if (msg.type === "motion") sensors.pushNativeMatrix(msg.m);
     if (msg.type === "location") setLocation(msg.lat, msg.lon, msg.alt ?? 0);
+    if (msg.type === "calibrate") toast("Compass needs calibrating: wave your phone in a figure-8");
+    if (msg.type === "north" && msg.magnetic) toast("Allow location in Settings for accurate north");
   });
 
   faceBestTarget();

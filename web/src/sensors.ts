@@ -121,7 +121,8 @@ export function createSensors(onView: (v: View) => void): SensorController {
   // alpha on iOS is relative to an arbitrary start; this offset (radians)
   // anchors it to north using webkitCompassHeading.
   let alphaOffset: number | null = null;
-  const smoother = new VecSmoother(70);
+  // ~35 ms: steady without feeling laggy when you sweep the phone.
+  const smoother = new VecSmoother(35);
 
   const screenAngle = () =>
     (screen.orientation?.angle ?? (window as any).orientation ?? 0) as number;
