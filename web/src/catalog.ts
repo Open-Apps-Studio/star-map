@@ -123,7 +123,8 @@ export async function buildCatalog(skyBase: string): Promise<Entry[]> {
     name,
     aliases,
     kind: "star",
-    ids: [`NAME ${name}`, `HIP ${hip}`],
+    // HIP first: it's a direct tile lookup; "NAME …" scans every loaded object.
+    ids: [`HIP ${hip}`, `NAME ${name}`],
     blurb: blurb || undefined,
   }));
   const dsos: Entry[] = DEEP_SKY.map(([name, id, aliases, blurb]) => ({
@@ -167,12 +168,28 @@ export function search(catalog: Entry[], query: string, limit = 12): Entry[] {
   return scored.sort((a, b) => b[0] - a[0]).slice(0, limit).map(([, e]) => e);
 }
 
+/**
+ * Resolved objects, cached per entry. Engine lookups return a retained
+ * reference that SweObj never releases, so resolving once avoids leaking a
+ * reference (and pinning a tile) on every keystroke.
+ */
+const resolved = new WeakMap<Entry, SweObj>();
+
+export function isResolved(e: Entry): boolean {
+  return resolved.has(e);
+}
+
 export function resolve(stel: Stel, e: Entry): SweObj | null {
+  const cached = resolved.get(e);
+  if (cached) return cached;
   for (const id of e.ids) {
     try {
       const hip = /^HIP (\d+)$/.exec(id);
       const o = hip ? starByHip(stel, Number(hip[1])) : stel.getObj(id);
-      if (o) return o;
+      if (o) {
+        resolved.set(e, o);
+        return o;
+      }
     } catch {
       /* try the next designation */
     }

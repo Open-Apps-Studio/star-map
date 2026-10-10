@@ -78,8 +78,9 @@ export function bootEngine(canvas: HTMLCanvasElement): Promise<Stel> {
         core.planets.addDataSource({ url: sky("surveys/sso/moon"), key: "default" });
         core.comets.addDataSource({ url: sky("CometEls.txt"), key: "mpc_comets" });
         core.satellites.addDataSource({ url: sky("tle_satellite.jsonl.gz"), key: "jsonl/sat" });
-        // The engine's built-in Noto Sans fonts are used. (setFont with an
-        // external TTF crashes the -O3 build inside core_add_font.)
+        // The engine's built-in Noto Sans fonts are used. (An external TTF via
+        // setFont used to crash: emscripten 6 defaults to a 64 KB stack; the
+        // build now sets STACK_SIZE=5MB.)
 
         // Look of the first frame: real sky with atmosphere and ground,
         // constellation lines and names on, artwork faint.

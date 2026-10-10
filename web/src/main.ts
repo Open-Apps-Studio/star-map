@@ -6,7 +6,7 @@
 import "./style.css";
 import { abs, azAlt, bootEngine, D2R, displayName, knownNames, R2D, type Stel, type SweObj } from "./engine";
 import { createSensors, type View, type Vec3 } from "./sensors";
-import { buildCatalog, resolve, search, type Entry, type Kind } from "./catalog";
+import { buildCatalog, isResolved, resolve, search, type Entry, type Kind } from "./catalog";
 import { dateToMjd, fmtTime, moonPhaseName, whereText, compass, mjdToDate } from "./astro";
 import { inApp, listen, post } from "./bridge";
 
@@ -125,6 +125,7 @@ for (const ev of ["touchmove", "mousemove", "wheel"]) {
  * screen height and converted with the (vertical) field of view every frame.
  */
 let offsetFrac = 0;
+let lastFov = 0;
 function targetOffsetFrac(): number {
   if (!cardObj || sensors.active) return 0;
   const h = window.innerHeight;
@@ -138,9 +139,11 @@ function targetOffsetFrac(): number {
 let lastUi = 0;
 function frame(t: number) {
   const target = targetOffsetFrac();
-  if (Math.abs(target - offsetFrac) > 1e-4 || target !== 0) {
-    offsetFrac += (target - offsetFrac) * 0.12;
-    obs.view_offset_alt = offsetFrac * (core.fov as number);
+  const fovNow = core.fov as number;
+  if (Math.abs(target - offsetFrac) > 1e-4 || fovNow !== lastFov) {
+    offsetFrac = Math.abs(target - offsetFrac) > 1e-4 ? offsetFrac + (target - offsetFrac) * 0.12 : target;
+    obs.view_offset_alt = offsetFrac * fovNow;
+    lastFov = fovNow;
   }
   updateGuide();
   if (t - lastUi > 250) {
@@ -431,6 +434,13 @@ $("now-btn").addEventListener("click", () => {
   post({ type: "haptic", style: "light" });
 });
 
+/** Solar-system objects, looked up once (each getObj returns a retained ref). */
+const planets = new Map<string, SweObj | null>();
+function planet(name: string): SweObj | null {
+  if (!planets.has(name) || !planets.get(name)) planets.set(name, stel.getObj(`NAME ${name}`));
+  return planets.get(name) ?? null;
+}
+
 // ---------------------------------------------------------------- first view
 /**
  * Open facing something worth seeing: the brightest planet or the Moon that's
@@ -439,7 +449,7 @@ $("now-btn").addEventListener("click", () => {
 function faceBestTarget() {
   let best: { az: number; mag: number } | null = null;
   for (const n of ["Moon", "Venus", "Jupiter", "Mars", "Saturn", "Mercury"]) {
-    const o = stel.getObj(`NAME ${n}`);
+    const o = planet(n);
     if (!o) continue;
     const { az, alt } = azAlt(stel, o);
     if (alt < 10 * D2R) continue;
@@ -462,7 +472,7 @@ function refreshTonight() {
   const chips: string[] = [];
   const items: { name: string; obj: SweObj }[] = [];
   for (const n of PLANET_NAMES) {
-    const obj = stel.getObj(`NAME ${n}`);
+    const obj = planet(n);
     if (!obj) continue;
     const { az, alt } = azAlt(stel, obj);
     if (alt < 2 * D2R) continue;
@@ -482,7 +492,7 @@ function refreshTonight() {
     items.push({ name: n, obj });
     chips.push(`<button class="chip" data-name="${n}">${label}</button>`);
   }
-  const sun = stel.getObj("NAME Sun");
+  const sun = planet("Sun");
   const sunAlt = sun ? azAlt(stel, sun).alt * R2D : -90;
   const head = sunAlt > -6 ? (sunAlt > 0 ? "Daytime sky" : "Twilight") : "Up now";
   tonight.innerHTML = `<span class="tonight-head">${head}</span>` + (chips.length ? chips.join("") : `<span class="chip muted">No bright planets up</span>`);
@@ -501,7 +511,7 @@ function refreshTonight() {
 function prefetchStarNames(round = 0) {
   let missing = 0;
   for (const e of catalog) {
-    if (e.kind !== "star") continue;
+    if (e.kind !== "star" || isResolved(e)) continue;
     const o = resolve(stel, e);
     if (!o) {
       missing++;
