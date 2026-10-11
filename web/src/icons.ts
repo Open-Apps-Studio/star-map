@@ -10,6 +10,7 @@ import {
   mdiInformationOutline, mdiStarFourPoints,
   mdiBinoculars, mdiCalendarStar, mdiCamera, mdiCircleHalfFull, mdiCogOutline, mdiCubeOutline, mdiMeteor, mdiMoonWaningCrescent, mdiOrbit, mdiRotate3d, mdiStar, mdiStarOutline, mdiTelescope, mdiWeatherSunset, mdiWhiteBalanceSunny, mdiClose, mdiTarget, mdiPlus, mdiDeleteOutline, mdiCheck,
 } from "@mdi/js";
+import { PLANET_THUMBS } from "./planet-thumbs";
 
 export const MDI: Record<string, string> = {
   mdiArrowLeft, mdiChartBellCurve, mdiCompassOutline, mdiCrosshairsGps, mdiEarth, mdiGrid, mdiHistory, mdiImageFilterHdr,
@@ -34,6 +35,16 @@ const PLANET_COLORS: Record<string, string> = {
   Saturn: "#e6cf98", Uranus: "#a6dbe3", Neptune: "#5f86e6", Pluto: "#c9b29a",
 };
 
+/** Astronomical symbols. U+FE0E forces text presentation so iOS doesn't draw ♀/♂ as emoji. */
+export const PLANET_GLYPHS: Record<string, string> = {
+  Sun: "☉", Moon: "☽", Mercury: "☿", Venus: "♀", Mars: "♂", Jupiter: "♃", Saturn: "♄", Uranus: "⛢", Neptune: "♆", Pluto: "⯓",
+};
+export const planetGlyph = (name: string) => (PLANET_GLYPHS[name] ? PLANET_GLYPHS[name] + "\uFE0E" : "");
+
+/** A small textured globe (real surface maps), or "" when we have none for this body. */
+export const planetThumb = (name: string, px = 22) =>
+  PLANET_THUMBS[name] ? `<img class="planet-thumb" src="${PLANET_THUMBS[name]}" width="${px}" height="${px}" alt="" draggable="false">` : "";
+
 export const planetColor = (name: string) => PLANET_COLORS[name] ?? "#cfcfcf";
 
 /** Moon disc lit by fraction `lit` (0..1); `waxing` = lit on the right. */
@@ -45,8 +56,11 @@ function moonSvg(lit: number, waxing: boolean): string {
   const sweepOuter = waxing ? 1 : 0;
   const sweepInner = k > 0 ? (waxing ? 0 : 1) : waxing ? 1 : 0;
   const d = `M24 4 A${r} ${r} 0 0 ${sweepOuter} 24 44 A${rx} ${r} 0 0 ${sweepInner} 24 4Z`;
-  return `<svg viewBox="0 0 48 48"><circle cx="24" cy="24" r="${r}" fill="#3a3b3f"/><path d="${d}" fill="#e9e6dc"/></svg>`;
+  // Real lunar surface, with the unlit side dimmed by a mask (unique id per icon).
+  const id = `mm${moonIconCount++}`;
+  return `<svg viewBox="0 0 48 48"><defs><mask id="${id}"><rect width="48" height="48" fill="#fff"/><path d="${d}" fill="#000"/></mask></defs><image href="${PLANET_THUMBS.Moon}" x="4" y="4" width="40" height="40"/><circle cx="24" cy="24" r="${r + 0.5}" fill="#06080d" fill-opacity=".86" mask="url(#${id})"/></svg>`;
 }
+let moonIconCount = 0;
 
 export type IconKind = "planet" | "moon" | "sun" | "star" | "galaxy" | "nebula" | "cluster" | "constellation" | "satellite" | "comet" | "asteroid" | "other";
 
@@ -56,9 +70,12 @@ export function objectIcon(kind: IconKind, opts: { name?: string; lit?: number; 
       return moonSvg(opts.lit ?? 0.5, opts.waxing ?? true);
     case "sun":
     case "planet": {
-      const c = planetColor(opts.name ?? "");
-      const ring = opts.name === "Saturn" ? `<ellipse cx="24" cy="24" rx="22" ry="6.5" fill="none" stroke="${c}" stroke-width="2" opacity=".75" transform="rotate(-18 24 24)"/>` : "";
-      return `<svg viewBox="0 0 48 48"><circle cx="24" cy="24" r="${opts.name === "Saturn" ? 14 : 19}" fill="${c}"/>${ring}</svg>`;
+      const name = opts.name ?? (kind === "sun" ? "Sun" : "");
+      const thumb = PLANET_THUMBS[name];
+      if (thumb) return `<svg viewBox="0 0 48 48"><image href="${thumb}" x="0" y="0" width="48" height="48"/></svg>`;
+      // No map for this body (dwarf planets, moons): a shaded disc in its colour.
+      const c = planetColor(name);
+      return `<svg viewBox="0 0 48 48"><defs><radialGradient id="pg" cx=".35" cy=".3" r=".8"><stop offset="0" stop-color="#fff" stop-opacity=".55"/><stop offset=".45" stop-color="${c}"/><stop offset="1" stop-color="#000" stop-opacity=".55"/></radialGradient></defs><circle cx="24" cy="24" r="19" fill="${c}"/><circle cx="24" cy="24" r="19" fill="url(#pg)"/></svg>`;
     }
     case "star":
       return `<svg viewBox="0 0 48 48" fill="none" stroke="#fff"><circle cx="24" cy="24" r="20" stroke-width="2"/><circle cx="24" cy="24" r="13" stroke-width="2"/><circle cx="24" cy="24" r="5" fill="#fff"/></svg>`;

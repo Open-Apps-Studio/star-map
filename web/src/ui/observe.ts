@@ -12,7 +12,7 @@ import { dateToMjd, fmtTime, mjdToDate, moonPhaseName, compass } from "../astro"
 import { computeEvents, loadMeteorShowers, nightOf, satellitePasses, type Night, type SkyEvent } from "../events";
 import { loadIndex } from "../search-index";
 import { resolve } from "../catalog";
-import { icon, MDI, objectIcon, planetColor } from "../icons";
+import { icon, MDI, objectIcon, planetColor, planetGlyph, planetThumb } from "../icons";
 import { closePages, el, pushPage, refreshPage, section, segmented } from "./page";
 import { updateClock } from "./time";
 
@@ -66,7 +66,7 @@ function planetBars(body: HTMLElement, night: Night) {
         }
       }
       const row = el("button", "tn-row");
-      row.innerHTML = `<div class="tn-name"><span class="tn-dot" style="background:${color}"></span>${name}</div><div class="tn-track">${segs.join("")}</div>`;
+      row.innerHTML = `<div class="tn-name">${planetThumb(name, 26)}<span class="tn-label">${name}</span><span class="tn-glyph">${planetGlyph(name)}</span></div><div class="tn-track">${segs.join("")}</div>`;
       row.addEventListener("click", () => jump(app.obs.utc, obj));
       wrap.appendChild(row);
     }

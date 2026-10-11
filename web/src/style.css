@@ -171,12 +171,14 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 26px;
 .tn-sun { display: flex; justify-content: space-around; text-align: center; padding: 6px 0 10px; }
 .tn-sun .big { font-size: 28px; }
 .tn-rows { position: relative; }
-.tn-row { display: grid; grid-template-columns: 96px 1fr; align-items: center; height: 30px; }
+.tn-row { display: grid; grid-template-columns: 132px 1fr; align-items: center; height: 36px; }
 .tn-name { display: flex; align-items: center; gap: 8px; font-size: 14px; }
-.tn-dot { width: 12px; height: 12px; border-radius: 50%; }
+.planet-thumb { display: block; flex: none; border-radius: 50%; user-select: none; -webkit-user-drag: none; }
+.tn-label { flex: 1; }
+.tn-glyph { color: var(--faint); font-size: 15px; width: 1.1em; text-align: center; }
 .tn-track { position: relative; height: 100%; background: linear-gradient(90deg, rgba(60,140,180,.35), rgba(255,255,255,.03) 18%, rgba(255,255,255,.03) 82%, rgba(60,140,180,.35)); }
 .tn-bar { position: absolute; top: 12px; height: 6px; border-radius: 3px; }
-.tn-axis { display: grid; grid-template-columns: 96px 1fr; font-size: 11px; color: var(--muted); }
+.tn-axis { display: grid; grid-template-columns: 132px 1fr; font-size: 11px; color: var(--muted); }
 .tn-axis div:last-child { display: flex; justify-content: space-between; }
 
 /* ---------------------------------------------------------------- pointing mode */
