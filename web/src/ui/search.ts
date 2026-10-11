@@ -106,7 +106,9 @@ export function open() {
   activeChip = null;
   renderChips();
   refresh();
-  setTimeout(() => $("search-input").focus(), 60);
+  // Focus inside the tap's handler: iOS only raises the keyboard for a focus
+  // that happens during a user gesture (a delayed focus left it down).
+  $("search-input").focus();
 }
 
 export function close() {

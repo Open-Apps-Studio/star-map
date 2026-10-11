@@ -11,6 +11,8 @@ export const app = {
   catalog: [] as Entry[],
   /** Whether the phone's orientation drives the view. */
   pointing: false,
+  /** In the app: whether the phone has a usable motion sensor (null = not told yet). */
+  motion: null as boolean | null,
 };
 
 export const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;

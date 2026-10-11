@@ -23,7 +23,8 @@ const SKY_URL = SKY_DIR + "index.html";
 type PageMessage =
   | { type: "haptic"; style: "light" | "medium" | "success" | "selection" }
   | { type: "ready" }
-  | { type: "sensor-mode"; on: boolean };
+  | { type: "sensor-mode"; on: boolean }
+  | { type: "log"; text: string };
 
 export default function Sky() {
   useKeepAwake();
@@ -97,7 +98,11 @@ export default function Sky() {
       } catch {
         return;
       }
-      if (msg.type === "ready") sendLocation();
+      if (msg.type === "ready") {
+        send({ type: "caps", motion: StarMotion.isAvailable() });
+        sendLocation();
+      }
+      if (msg.type === "log") StarMotion.log(msg.text);
       if (msg.type === "sensor-mode") setMotion(msg.on);
       if (msg.type === "haptic") {
         if (msg.style === "success") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -120,6 +125,16 @@ export default function Sky() {
         allowFileAccessFromFileURLs
         allowUniversalAccessFromFileURLs
         onMessage={onMessage}
+        // iOS kills the web content process under memory pressure (often
+        // while the app is in the background). Without this the sky stays
+        // blank until the app is force-quit.
+        onContentProcessDidTerminate={() => {
+          StarMotion.log("web content process terminated, reloading");
+          motionSub.current?.remove();
+          motionSub.current = null;
+          StarMotion.stop();
+          web.current?.reload();
+        }}
         style={styles.web}
         containerStyle={styles.web}
         bounces={false}
@@ -130,6 +145,8 @@ export default function Sky() {
         allowsInlineMediaPlayback
         // Native feel: no web-form toolbar above the keyboard, no link previews.
         hideKeyboardAccessoryView
+        // Search opens with the keyboard up, like a native search screen.
+        keyboardDisplayRequiresUserAction={false}
         allowsLinkPreview={false}
         textInteractionEnabled
         javaScriptEnabled

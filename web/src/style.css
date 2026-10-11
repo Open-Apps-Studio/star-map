@@ -183,7 +183,7 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 26px;
   border: 6px solid rgba(255,255,255,.22); display: flex; justify-content: center; transition: border-color .2s; }
 #pointer.locked .ring { border-color: rgba(127,168,245,.75); }
 #pointer-alt { margin-top: 18%; font-size: 20px; color: rgba(255,255,255,.38); font-variant-numeric: tabular-nums; }
-#pointer-tri { position: absolute; left: 50%; top: 50%; width: 22vw; height: 22vw; margin: -11vw 0 0 -11vw; fill: rgba(255,255,255,.24); }
+#pointer-tri { position: absolute; left: 50%; top: 50%; width: 22vw; height: 22vw; margin: -11vw 0 0 -11vw; fill: rgba(255,255,255,.24); display: none; }
 #pointer.locked #pointer-tri { display: none; }
 
 /* ---------------------------------------------------------------- toast & night */

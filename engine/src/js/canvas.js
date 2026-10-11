@@ -49,10 +49,19 @@ Module.afterInit(function() {
 
     // TODO: manage paning and flicking here
 
-    Module._core_update();
-    Module._core_render(displayWidth, displayHeight, dpr);
-
+    // Star Map fix: always schedule the next frame, even if this one throws.
+    // Upstream rescheduled after rendering, so a single bad frame (a JS error
+    // in a listener, a lost GL context) froze the sky for good.
     window.requestAnimationFrame(render)
+    if (Module.contextLost) return;
+    try {
+      Module._core_update();
+      Module._core_render(displayWidth, displayHeight, dpr);
+    } catch (e) {
+      Module.frameErrors = (Module.frameErrors || 0) + 1;
+      if (Module.frameErrors <= 3) console.error('Star Map frame error', e);
+      if (Module.onFrameError) Module.onFrameError(e);
+    }
   }
 
   var fixPageXY = function(e) {
@@ -121,7 +130,7 @@ Module.afterInit(function() {
         Module._core_on_mouse(id, -1, relX, relY, 1);
       }
     }, {passive: false});
-    canvas.addEventListener('touchend', function(e) {
+    var onTouchEnd = function(e) {
       var rect = canvas.getBoundingClientRect();
       for (var i = 0; i < e.changedTouches.length; i++) {
         var id = e.changedTouches[i].identifier;
@@ -129,7 +138,13 @@ Module.afterInit(function() {
         var relY = e.changedTouches[i].pageY - rect.top;
         Module._core_on_mouse(id, 0, relX, relY, 1);
       }
-    });
+    };
+    canvas.addEventListener('touchend', onTouchEnd);
+    // Star Map fix: iOS cancels touches all the time (a permission alert, an
+    // edge swipe, Control Center, a notification). The engine only has two
+    // touch slots and resets gestures once every touch is up, so a cancelled
+    // touch that never "ended" left the sky stuck and ignoring fingers.
+    canvas.addEventListener('touchcancel', onTouchEnd);
 
     function getMouseWheelDelta(event) {
       var delta = 0;
@@ -166,6 +181,15 @@ Module.afterInit(function() {
   };
 
   setupMouse();
+
+  // Star Map fix: WebKit drops the WebGL context under memory pressure or
+  // after a long time in the background. The engine can't rebuild its GPU
+  // resources, so stop drawing and let the page decide (it reloads).
+  Module.canvas.addEventListener('webglcontextlost', function(e) {
+    e.preventDefault();
+    Module.contextLost = true;
+    if (Module.onContextLost) Module.onContextLost();
+  }, false);
 
   // Kickoff rendering at max FPS, normally 60 FPS on a browser.
   window.requestAnimationFrame(render)

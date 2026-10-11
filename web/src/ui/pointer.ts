@@ -50,6 +50,10 @@ export function startGuide(obj: SweObj) {
 
 export async function setPointing(on: boolean) {
   if (on) {
+    if (inApp() && app.motion === false) {
+      toast("This device has no motion sensor, so pointing mode isn't available.");
+      return;
+    }
     const ok = await sensors.start(inApp());
     if (!ok) {
       toast("Motion access is off. Allow it in Settings to use pointing mode.");
@@ -99,8 +103,9 @@ export function updatePointer() {
   } else if (!locked) {
     lockedAt = 0;
   }
+  // Inline display wins over the stylesheet's .locked rule, so set it here.
+  tri.style.display = locked ? "none" : "block";
   if (locked) return;
-  tri.style.display = "block";
   // Sit the triangle just outside the ring, pointing at the target.
   const ang = Math.atan2(-y, x);
   const rad = 0.26 * window.innerWidth + 0.1 * window.innerWidth;

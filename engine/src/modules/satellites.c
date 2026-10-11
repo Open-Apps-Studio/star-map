@@ -36,6 +36,9 @@ struct satellite {
     double decay_date;
 
     bool error; // Set if we got an error computing the position.
+    // Star Map: time of that error, and whether it was logged already.
+    double error_utc;
+    bool error_logged;
     json_value *data; // Data passed in the constructor.
     double max_brightness; // Cached max_brightness value.
 
@@ -407,21 +410,29 @@ static int satellite_update(satellite_t *sat, const observer_t *obs)
     char buf[128];
     int r;
 
-    if (sat->error) return 0;
+    // Star Map fix: upstream flagged a satellite as broken forever after
+    // one failed orbit computation, so travelling a few years ahead (where
+    // SGP4 diverges) made the ISS and friends vanish for the whole session,
+    // even after going back to now. Retry once the time moves a day away.
+    if (sat->error && fabs(obs->utc - sat->error_utc) < 1.0) return 0;
     assert(sat->elsetrec);
     if (!satellite_is_operational(sat, obs->utc)) return 0;
 
     // Orbit computation.
     r = sgp4(sat->elsetrec, obs->utc, pv[0],  pv[1]);
-    if (r && r != 6) { // 6 = satellite decayed, don't log this case.
+    // 6 = satellite decayed, don't log this case. Log each satellite once.
+    if (r && r != 6 && !sat->error_logged) {
         obj_get_name((obj_t*)sat, buf, sizeof(buf));
         LOG_W("Satellite position error for %s (%d), err=%d",
               buf, sat->number, r);
+        sat->error_logged = true;
     }
     if (r) {
         sat->error = true;
+        sat->error_utc = obs->utc;
         return 0;
     }
+    sat->error = false;
     assert(!isnan(pv[0][0]) && !isnan(pv[0][1]));
 
     vec3_mul(1000.0 * DM2AU, pv[0], pv[0]);

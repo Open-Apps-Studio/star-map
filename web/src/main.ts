@@ -81,6 +81,61 @@ function prefetchStarNames(round = 0) {
   if (missing && round < 20) setTimeout(() => prefetchStarNames(round + 1), 500);
 }
 
+// ---------------------------------------------------------------- recovery
+/**
+ * Report page errors to the native shell (it writes them to the device log),
+ * so a sky that dies on someone's phone leaves a trace.
+ */
+function reportErrors() {
+  const send = (text: string) => post({ type: "log", text: text.slice(0, 2000) });
+  window.addEventListener("error", (e) => send(`error: ${e.message} @ ${e.filename}:${e.lineno}`));
+  window.addEventListener("unhandledrejection", (e) => send(`unhandled: ${String(e.reason?.stack ?? e.reason)}`));
+}
+
+const RESUME_KEY = "resume";
+
+/**
+ * iOS drops the WebGL context under memory pressure or after a long time in
+ * the background, and the engine can't rebuild its GPU state. Save the view
+ * and reload, so the user comes back to the same sky instead of a black one.
+ */
+function reloadKeepingView() {
+  try {
+    sessionStorage.setItem(
+      RESUME_KEY,
+      JSON.stringify({
+        yaw: app.obs.yaw, pitch: app.obs.pitch, fov: app.core.fov,
+        utc: app.obs.utc, speed: app.core.time_speed, savedAt: Date.now(),
+      }),
+    );
+  } catch {
+    /* storage unavailable: a fresh start is still better than a black sky */
+  }
+  location.reload();
+}
+
+/** Restore the view saved by reloadKeepingView. Returns false if there's none. */
+function resumeView(): boolean {
+  let s: { yaw: number; pitch: number; fov: number; utc: number; speed: number; savedAt: number } | null = null;
+  try {
+    s = JSON.parse(sessionStorage.getItem(RESUME_KEY) ?? "null");
+    sessionStorage.removeItem(RESUME_KEY);
+  } catch {
+    return false;
+  }
+  if (!s || Date.now() - s.savedAt > 10 * 60_000) return false;
+  app.obs.yaw = s.yaw;
+  app.obs.pitch = s.pitch;
+  app.core.fov = s.fov;
+  // Live time stays live; a time the user travelled to is kept.
+  const live = Math.abs(s.utc + (Date.now() - s.savedAt) / 86400000 - dateToMjd(new Date())) < 2 / 1440 && s.speed === 1;
+  if (!live) {
+    app.obs.utc = s.utc;
+    app.core.time_speed = s.speed;
+  }
+  return true;
+}
+
 // ---------------------------------------------------------------- frame loop
 let lastSlow = 0;
 function frame(t: number) {
@@ -96,6 +151,7 @@ function frame(t: number) {
 
 // ---------------------------------------------------------------- boot
 async function main() {
+  reportErrors();
   const canvas = $<HTMLCanvasElement>("stel-canvas");
   try {
     app.stel = await bootEngine(canvas);
@@ -106,6 +162,11 @@ async function main() {
   app.core = app.stel.core;
   app.obs = app.stel.observer ?? app.core.observer;
   (window as any).stel = app.stel; // handy in the inspector
+  const M = app.stel as any;
+  M.onContextLost = reloadKeepingView;
+  M.onFrameError = (e: unknown) => {
+    if (M.frameErrors === 1) post({ type: "log", text: `frame error: ${String((e as Error)?.stack ?? e)}` });
+  };
   app.obs.utc = dateToMjd(new Date());
   initLocation();
 
@@ -131,9 +192,10 @@ async function main() {
     if (msg.type === "location") setLocation(msg.lat, msg.lon, msg.alt ?? 0);
     if (msg.type === "calibrate") toast("Compass needs calibrating: wave your phone in a figure-8");
     if (msg.type === "north" && msg.magnetic) toast("Allow location for accurate north");
+    if (msg.type === "caps") app.motion = msg.motion;
   });
 
-  faceBestTarget();
+  if (!resumeView()) faceBestTarget();
   requestAnimationFrame(frame);
   document.body.classList.add("ready");
   post({ type: "ready" });

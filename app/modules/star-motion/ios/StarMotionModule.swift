@@ -35,6 +35,12 @@ public class StarMotionModule: Module {
       self.manager.stopDeviceMotionUpdates()
     }
 
+    /// Page errors from the sky WebView, so they show up in the device log
+    /// (Console.app / `log stream`) even in release builds.
+    Function("log") { (text: String) in
+      NSLog("[StarMap sky] %@", text)
+    }
+
     OnDestroy {
       self.manager.stopDeviceMotionUpdates()
     }
