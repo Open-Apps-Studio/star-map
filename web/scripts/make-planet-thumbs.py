@@ -44,6 +44,9 @@ def sphere(map_name: str, lon0: float, lat0: float, radius: float, lit_sun: bool
     else:
         lx, ly, lz = -0.45, 0.5, 0.74
         shade = np.clip(x * lx + y * ly + z * lz, 0, 1) * 0.85 + 0.15
+    # Mercury's map is neutral grey like the Moon's; warm and darken it so the two read apart.
+    if map_name == "mercury":
+        px = px * np.array([0.98, 0.86, 0.74], dtype=np.float32) * 0.9
     rgb = px * shade[..., None]
     out = np.dstack([rgb.clip(0, 255), inside.astype(np.float32) * 255]).astype(np.uint8)
     return Image.fromarray(out)

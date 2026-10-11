@@ -206,6 +206,24 @@ const KIND_ICON: Record<SkyEvent["kind"], string> = {
   elongation: MDI.mdiWeatherSunset, eclipse: MDI.mdiCircleHalfFull, meteors: MDI.mdiMeteor, earth: MDI.mdiWhiteBalanceSunny,
 };
 
+const BODY_NAMES = ["Sun", "Moon", "Mercury", "Venus", "Mars", "Jupiter", "Saturn", "Uranus", "Neptune"];
+const MOON_PHASES: Record<string, { lit: number; waxing: boolean }> = {
+  "New Moon": { lit: 0, waxing: true }, "First Quarter": { lit: 0.5, waxing: true },
+  "Full Moon": { lit: 1, waxing: true }, "Last Quarter": { lit: 0.5, waxing: false },
+};
+
+/** Calendar row icon: the real bodies involved (globes, the Moon at its phase), generic glyphs only for the rest. */
+function eventIcon(ev: SkyEvent): string {
+  const globe = (name: string) => planetThumb(name, 30);
+  if (ev.kind === "moon" && MOON_PHASES[ev.title]) return `<span class="cal-moon">${objectIcon("moon", MOON_PHASES[ev.title])}</span>`;
+  if (ev.kind === "eclipse") return globe(ev.title.startsWith("Solar") ? "Sun" : "Moon");
+  if (ev.kind === "conjunction" || ev.kind === "opposition" || ev.kind === "elongation") {
+    const bodies = BODY_NAMES.filter((n) => ev.title.includes(n)).sort((a, b) => ev.title.indexOf(a) - ev.title.indexOf(b));
+    if (bodies.length) return `<span class="cal-pair">${bodies.map(globe).join("")}</span>`;
+  }
+  return icon(KIND_ICON[ev.kind]);
+}
+
 let calendarCache: { start: number; lat: number; lon: number; events: SkyEvent[] } | null = null;
 
 async function calendar(body: HTMLElement) {
@@ -240,7 +258,7 @@ async function calendar(body: HTMLElement) {
     row.innerHTML = `<span class="cal-date"><b></b><span></span></span><span class="cal-ic"></span><span class="row-text"><span class="row-label"></span><span class="row-sub"></span></span>`;
     row.querySelector(".cal-date b")!.textContent = String(d.getDate());
     row.querySelector(".cal-date span")!.textContent = ev.allNight ? "night" : fmtTime(ev.mjd);
-    row.querySelector(".cal-ic")!.innerHTML = icon(KIND_ICON[ev.kind]);
+    row.querySelector(".cal-ic")!.innerHTML = eventIcon(ev);
     row.querySelector(".row-label")!.textContent = ev.title;
     row.querySelector(".row-sub")!.textContent = ev.detail;
     row.addEventListener("click", () => jump(ev.mjd, ev.target));
