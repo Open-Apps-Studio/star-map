@@ -5,8 +5,8 @@
  * altitude across the day that you can scrub.
  */
 import { $, app, haptic, openPanel, planet } from "../state";
-import { icon, MDI } from "../icons";
-import { dateToMjd, mjdToDate } from "../astro";
+import { icon, MDI, objectIcon } from "../icons";
+import { dateToMjd, mjdToDate, moonPhaseName } from "../astro";
 import { altitudeFor, withObserverCopy } from "../engine";
 
 const D2R = Math.PI / 180;
@@ -44,6 +44,25 @@ function renderFields() {
     f.querySelector("span")!.textContent = v[f.dataset.unit!];
   });
   placeThumb();
+  renderMoon();
+}
+
+/** The Moon's phase on the chosen date (Sky Guide shows it in its date picker). */
+let moonKey = "";
+function renderMoon() {
+  const moon = planet("Moon");
+  if (!moon) return;
+  const lit = moon.getInfo("phase") as number;
+  const later = withObserverCopy(app.stel, (o) => {
+    o.utc = app.obs.utc + 0.25;
+    return moon.getInfo("phase", o) as number;
+  });
+  const waxing = later > lit;
+  const key = `${Math.round(lit * 100)}${waxing}`;
+  if (key === moonKey) return;
+  moonKey = key;
+  $("dt-moon").innerHTML = `<span class="obj-icon">${objectIcon("moon", { lit, waxing })}</span><span></span>`;
+  $("dt-moon").lastElementChild!.textContent = `${moonPhaseName(lit, waxing)} · ${Math.round(lit * 100)}% lit`;
 }
 
 /** Step one calendar field, like Stellarium's ▲/▼. */

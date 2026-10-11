@@ -18,7 +18,7 @@
         "ITSAppUsesNonExemptEncryption": false,
         "NSLocalNetworkUsageDescription": "Star Map connects to your telescope on the local network to point it at objects."
       },
-      "buildNumber": "7"
+      "buildNumber": "8"
     },
     "android": {
       "package": "com.ahmet.starmap",
