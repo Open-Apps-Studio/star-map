@@ -1,0 +1,240 @@
+{
+ "skycultures": [
+  {
+   "id": "western",
+   "name": "Western",
+   "region": "Europe",
+   "art": true
+  },
+  {
+   "id": "anutan",
+   "name": "Anutan",
+   "region": "Oceania",
+   "art": false
+  },
+  {
+   "id": "arabic_al-sufi",
+   "name": "Arabic (Al-Sufi)",
+   "region": "Middle East",
+   "art": true
+  },
+  {
+   "id": "arabic_ancient",
+   "name": "Arabic (Ancient)",
+   "region": "Middle East",
+   "art": false
+  },
+  {
+   "id": "arabic_arabian_peninsula",
+   "name": "Arabic (Arabian Peninsula)",
+   "region": "Middle East",
+   "art": false
+  },
+  {
+   "id": "arabic_lunar_stations",
+   "name": "Arabic (Lunar Stations)",
+   "region": "Middle East",
+   "art": false
+  },
+  {
+   "id": "belarusian",
+   "name": "Belarusian",
+   "region": "Europe",
+   "art": true
+  },
+  {
+   "id": "blackfoot",
+   "name": "Blackfoot",
+   "region": "America",
+   "art": false
+  },
+  {
+   "id": "bugis",
+   "name": "Bugis",
+   "region": "Asia",
+   "art": false
+  },
+  {
+   "id": "chinese",
+   "name": "Chinese",
+   "region": "Asia",
+   "art": false
+  },
+  {
+   "id": "chinese_contemporary",
+   "name": "Chinese Contemporary",
+   "region": "Asia",
+   "art": true
+  },
+  {
+   "id": "egyptian",
+   "name": "Egyptian",
+   "region": "Middle East",
+   "art": false
+  },
+  {
+   "id": "hawaiian_starlines",
+   "name": "Hawaiian",
+   "region": "Oceania",
+   "art": true
+  },
+  {
+   "id": "indian",
+   "name": "Indian Vedic",
+   "region": "Asia",
+   "art": false
+  },
+  {
+   "id": "inuit",
+   "name": "Inuit",
+   "region": "America",
+   "art": true
+  },
+  {
+   "id": "japanese_moon_stations",
+   "name": "Japanese Lunar Stations",
+   "region": "Asia",
+   "art": false
+  },
+  {
+   "id": "kamilaroi",
+   "name": "Kamilaroi/Euahlayi",
+   "region": "Oceania",
+   "art": true
+  },
+  {
+   "id": "korean",
+   "name": "Korean",
+   "region": "Asia",
+   "art": false
+  },
+  {
+   "id": "mandar",
+   "name": "Mandar",
+   "region": "Asia",
+   "art": false
+  },
+  {
+   "id": "maori",
+   "name": "Maori",
+   "region": "Oceania",
+   "art": true
+  },
+  {
+   "id": "mongolian",
+   "name": "Mongolian",
+   "region": "Asia",
+   "art": false
+  },
+  {
+   "id": "navajo",
+   "name": "Navajo",
+   "region": "America",
+   "art": false
+  },
+  {
+   "id": "norse",
+   "name": "Norse",
+   "region": "Europe",
+   "art": false
+  },
+  {
+   "id": "romanian",
+   "name": "Romanian",
+   "region": "Europe",
+   "art": true
+  },
+  {
+   "id": "ruelle",
+   "name": "Ruelle",
+   "region": "Europe",
+   "art": false
+  },
+  {
+   "id": "sami",
+   "name": "Sami",
+   "region": "Europe",
+   "art": false
+  },
+  {
+   "id": "sardinian",
+   "name": "Sardinian",
+   "region": "Europe",
+   "art": false
+  },
+  {
+   "id": "siberian",
+   "name": "Siberian",
+   "region": "Asia",
+   "art": false
+  },
+  {
+   "id": "tongan",
+   "name": "Tongan",
+   "region": "Oceania",
+   "art": false
+  },
+  {
+   "id": "tukano",
+   "name": "Tukano",
+   "region": "America",
+   "art": false
+  },
+  {
+   "id": "tupi",
+   "name": "Tupi-Guarani",
+   "region": "America",
+   "art": false
+  },
+  {
+   "id": "western_rey",
+   "name": "Western (H.A.Rey)",
+   "region": "Europe",
+   "art": false
+  },
+  {
+   "id": "western_hlad",
+   "name": "Western (O.Hlad)",
+   "region": "Europe",
+   "art": false
+  },
+  {
+   "id": "western_SnT",
+   "name": "Western (Sky & Telescope)",
+   "region": "Europe",
+   "art": false
+  }
+ ],
+ "landscapes": [
+  {
+   "id": "guereins",
+   "name": "Guéreins",
+   "blurb": "Guéreins is small French village in the Valley of the Saône river near Lyon."
+  },
+  {
+   "id": "champagne_castle",
+   "name": "Champagne Castle",
+   "blurb": "View from the Giants Castle Game Reserve, South Africa"
+  },
+  {
+   "id": "ocean",
+   "name": "Ocean",
+   "blurb": ""
+  },
+  {
+   "id": "garching",
+   "name": "Garching",
+   "blurb": "A view from the ESO headquarters in Garching bei Munchen, Germany."
+  },
+  {
+   "id": "kloppenheim",
+   "name": "Kloppenheim",
+   "blurb": "View from Kloppenheim, South Africa."
+  },
+  {
+   "id": "winterfield",
+   "name": "Winter Field",
+   "blurb": "An outdoor view from Bavaria, Germany."
+  }
+ ]
+}

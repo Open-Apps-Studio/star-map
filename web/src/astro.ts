@@ -68,3 +68,33 @@ export const dateToMjd = (d: Date) => d.getTime() / 86400000 + 40587;
 
 export const fmtTime = (mjd: number) =>
   mjdToDate(mjd).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+
+const pad2 = (n: number) => String(n).padStart(2, "0");
+
+/** Right ascension (radians) as "05h 34m 31.9s". */
+export function fmtRA(rad: number): string {
+  let s = ((((rad / D2R) / 15) % 24) + 24) % 24 * 3600;
+  const h = Math.floor(s / 3600);
+  s -= h * 3600;
+  const m = Math.floor(s / 60);
+  s -= m * 60;
+  return `${pad2(h)}h ${pad2(m)}m ${s.toFixed(1).padStart(4, "0")}s`;
+}
+
+/** Declination / altitude (radians) as "+22° 00′ 52″". */
+export function fmtDec(rad: number): string {
+  const sign = rad < 0 ? "−" : "+";
+  let s = Math.abs(rad / D2R) * 3600;
+  const d = Math.floor(s / 3600);
+  s -= d * 3600;
+  const m = Math.floor(s / 60);
+  s = Math.round(s - m * 60);
+  return `${sign}${d}° ${pad2(m)}′ ${pad2(s)}″`;
+}
+
+/** Azimuth (radians) as "123° 45′". */
+export function fmtAz(rad: number): string {
+  const deg = ((rad / D2R) % 360 + 360) % 360;
+  const d = Math.floor(deg);
+  return `${d}° ${pad2(Math.round((deg - d) * 60) % 60)}′`;
+}

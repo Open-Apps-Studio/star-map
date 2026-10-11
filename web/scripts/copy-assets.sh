@@ -21,6 +21,10 @@ curl -sf --max-time 20 -o public/skydata/CometEls.txt.new https://www.minorplane
 cp ../engine/apps/simple-html/static/fonts/Roboto-*.ttf public/fonts/ 2>/dev/null || true
 # Planet surface textures (HiPS order 0, generated from CC BY 4.0 maps).
 rsync -a ../data/planets/ public/skydata/planets/
+# 3D view: planet maps (CC BY 4.0) and NASA models (public domain).
+rsync -a ../data/textures3d/ public/textures3d/
+rsync -a ../data/models3d/ public/models3d/
 # Offline search index over every bundled star, DSO, asteroid, comet and
 # satellite (after the comet/satellite refresh above).
 uv run -q --with zstandard --with numpy python ./scripts/build-search-index.py public/skydata public/skydata/search-index.json
+python3 ./scripts/build-meta.py public/skydata

@@ -93,9 +93,10 @@ export function loadIndex(): Promise<Hit[]> {
       const ids = idStr.split("|");
       out.push(makeHit(ids, { icon: "galaxy", kindLabel: "Deep sky object", ra: ra * D2R, de: de * D2R, mag, otype }));
     }
-    for (const [name, id, kind] of data.minor as [string, string, "asteroid" | "comet" | "satellite"][]) {
+    for (const [name, id, kind, mag] of data.minor as [string, string, "asteroid" | "comet" | "satellite", number?][]) {
       const h = makeHit([id], {
         icon: kind,
+        mag: kind === "satellite" ? mag ?? null : null,
         kindLabel: kind === "asteroid" ? "Asteroid" : kind === "comet" ? "Comet" : "Artificial satellite",
       });
       h.name = name;

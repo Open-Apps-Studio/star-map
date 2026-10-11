@@ -13,7 +13,7 @@ file), with the engine designation that finds each one.
 Output (compact JSON):
   {"stars": [[ids, ra, de, vmag], ...],
    "dsos": [[ids, ra, de, vmag, type], ...],
-   "minor": [[name, engine id, kind], ...]}   kind: asteroid | comet | satellite
+   "minor": [[name, engine id, kind, std mag?], ...]}   kind: asteroid | comet | satellite
 ids is the engine's '|' separated designation list; ra/de in degrees.
 
 Usage: build-search-index.py <skydata dir> <out json>
@@ -119,7 +119,7 @@ try:
         nm = (sat.get("short_name") or sat.get("names", [None])[0] or "").strip()
         num = sat.get("model_data", {}).get("norad_number")
         if nm and num:
-            minor.append([nm, f"NORAD {num}", "satellite"])
+            minor.append([nm, f"NORAD {num}", "satellite", sat.get("model_data", {}).get("mag")])
 except FileNotFoundError:
     pass
 json.dump({"stars": stars, "dsos": dsos, "minor": minor}, open(OUT, "w"), separators=(",", ":"), ensure_ascii=False)

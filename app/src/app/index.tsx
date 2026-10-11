@@ -24,7 +24,10 @@ type PageMessage =
   | { type: "haptic"; style: "light" | "medium" | "success" | "selection" }
   | { type: "ready" }
   | { type: "sensor-mode"; on: boolean }
-  | { type: "log"; text: string };
+  | { type: "log"; text: string }
+  | { type: "telescope-connect"; protocol: string; host: string; port: number }
+  | { type: "telescope-goto"; ra: number; dec: number }
+  | { type: "telescope-disconnect" };
 
 export default function Sky() {
   useKeepAwake();
@@ -82,13 +85,16 @@ export default function Sky() {
     [send, askLocation],
   );
 
-  useEffect(
-    () => () => {
+  useEffect(() => {
+    // Telescope state and position, straight through to the page.
+    const sub = StarMotion.onTelescope((e) => send({ type: "telescope", ...e }));
+    return () => {
+      sub?.remove();
       motionSub.current?.remove();
       StarMotion.stop();
-    },
-    [],
-  );
+      StarMotion.telescopeDisconnect();
+    };
+  }, [send]);
 
   const onMessage = useCallback(
     (e: WebViewMessageEvent) => {
@@ -103,6 +109,9 @@ export default function Sky() {
         sendLocation();
       }
       if (msg.type === "log") StarMotion.log(msg.text);
+      if (msg.type === "telescope-connect") StarMotion.telescopeConnect(msg.host, msg.port, msg.protocol);
+      if (msg.type === "telescope-goto") StarMotion.telescopeGoto(msg.ra, msg.dec);
+      if (msg.type === "telescope-disconnect") StarMotion.telescopeDisconnect();
       if (msg.type === "sensor-mode") setMotion(msg.on);
       if (msg.type === "haptic") {
         if (msg.style === "success") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);

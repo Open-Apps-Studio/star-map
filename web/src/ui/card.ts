@@ -6,8 +6,14 @@
 import { $, app, haptic } from "../state";
 import { icon, MDI, objectIcon, kindFromOtype, type IconKind } from "../icons";
 import { azAlt, displayName, withObserverCopy, type SweObj } from "../engine";
-import { fmtTime, whereText } from "../astro";
+import { fmtAz, fmtDec, fmtRA, fmtTime, whereText } from "../astro";
 import { startGuide } from "./pointer";
+import { renderAltGraph, graphFacts } from "./altgraph";
+import { isFavourite, settings, toggleFavourite } from "../settings";
+import { favouriteFor } from "./search";
+import { activeOcular, fmtAngle, setOcular } from "../ocular";
+import { gotoScope, scope, onScopeChange } from "../telescope";
+import { open3D, can3D } from "./view3d";
 
 const D2R = Math.PI / 180;
 let current: SweObj | null = null;
@@ -103,7 +109,56 @@ export function showCard(obj: SweObj | null) {
     haptic("selection");
   }
   card.hidden = false;
+  renderFav();
+  renderTools();
   updateFacts();
+}
+
+function renderFav() {
+  if (!current) return;
+  const on = isFavourite(current.designations());
+  const b = $("fav-btn");
+  b.innerHTML = icon(on ? MDI.mdiStar : MDI.mdiStarOutline);
+  b.setAttribute("aria-pressed", String(on));
+}
+
+/** Tool buttons under the title when expanded: 3D, telescope, eyepiece. */
+function renderTools() {
+  const box = $("card-tools");
+  box.innerHTML = "";
+  const obj = current;
+  if (!obj) return;
+  const add = (path: string, label: string, onClick: () => void) => {
+    const b = document.createElement("button");
+    b.className = "tool";
+    b.innerHTML = `${icon(path)}<span></span>`;
+    b.lastElementChild!.textContent = label;
+    b.addEventListener("click", (e) => {
+      e.stopPropagation();
+      haptic("light");
+      onClick();
+    });
+    box.appendChild(b);
+  };
+  if (can3D(obj)) add(MDI.mdiRotate3d, "3D view", () => open3D(obj));
+  if (settings.telescope && scope.status === "connected") {
+    add(MDI.mdiTelescope, "Slew", () => {
+      const v = obj.getInfo("radec") as number[];
+      const [ra, dec] = app.stel.c2s(v);
+      gotoScope(app.stel.anp(ra), app.stel.anpm(dec), displayName(obj));
+    });
+  }
+  const eyepiece = activeOcular() ?? settings.oculars.find((o) => o.kind !== "telrad") ?? settings.oculars[0];
+  if (eyepiece && iconKind(obj) !== "constellation") {
+    add(MDI.mdiBinoculars, activeOcular() ? "Hide view" : eyepiece.name, () => {
+      if (activeOcular()) setOcular(null);
+      else {
+        app.stel.pointAndLock(obj, 0.8);
+        setOcular(eyepiece);
+      }
+      renderTools();
+    });
+  }
 }
 
 const AU_KM = 149597870.7;
@@ -143,11 +198,38 @@ export function updateFacts() {
   const obj = current;
   if (!obj || !$("card").classList.contains("expanded")) return;
   const rows: [string, string][] = [];
+  const kind = iconKind(obj);
   try {
     const { az, alt } = azAlt(app.stel, obj);
     rows.push(["Now", whereText(az, alt)]);
+    if (kind !== "constellation") {
+      rows.push(["Az / Alt", `${fmtAz(az)} / ${fmtDec(alt)}`]);
+      const v = obj.getInfo("radec") as number[];
+      const [ra, de] = app.stel.c2s(v);
+      rows.push(["RA / Dec (J2000)", `${fmtRA(app.stel.anp(ra))} / ${fmtDec(app.stel.anpm(de))}`]);
+      const j = app.stel.convertFrame(app.obs, "ICRF", "JNOW", v);
+      const [raj, dej] = app.stel.c2s(j);
+      rows.push(["RA / Dec (of date)", `${fmtRA(app.stel.anp(raj))} / ${fmtDec(app.stel.anpm(dej))}`]);
+    }
   } catch {
     /* no position (e.g. constellation) */
+  }
+  // Visibility graph (not for satellites: they cross the sky in minutes).
+  const graph = $("card-graph");
+  if (kind !== "constellation" && kind !== "satellite") {
+    graph.hidden = false;
+    try {
+      renderAltGraph(graph, obj);
+      rows.push(...graphFacts());
+    } catch {
+      graph.hidden = true;
+    }
+  } else graph.hidden = true;
+  const radius = obj.getInfo("radius");
+  if (typeof radius === "number" && radius > 0 && kind !== "star") rows.push(["Apparent size", fmtAngle((2 * radius * 180) / Math.PI)]);
+  if (kind === "planet") {
+    const phase = obj.getInfo("phase");
+    if (typeof phase === "number" && phase < 0.995) rows.push(["Illuminated", `${Math.round(phase * 100)}%`]);
   }
   const vmag = obj.getInfo("vmag");
   if (typeof vmag === "number" && Number.isFinite(vmag)) rows.push(["Magnitude", vmag.toFixed(2)]);
@@ -247,6 +329,14 @@ export function initCard() {
   $("zoom-in").innerHTML = icon(MDI.mdiPlusCircleOutline);
   $("zoom-out").innerHTML = icon(MDI.mdiMinusCircleOutline);
   $("center-btn").addEventListener("click", center);
+  $("fav-btn").addEventListener("click", (e) => {
+    e.stopPropagation();
+    if (!current) return;
+    const on = toggleFavourite(favouriteFor(current));
+    haptic(on ? "success" : "light");
+    renderFav();
+  });
+  onScopeChange(() => current && renderTools());
   $("zoom-in").addEventListener("click", () => {
     app.stel.zoomTo((app.core.fov as number) * 0.3, 0.4);
     haptic("light");

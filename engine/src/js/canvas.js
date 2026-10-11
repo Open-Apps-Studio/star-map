@@ -53,7 +53,9 @@ Module.afterInit(function() {
     // Upstream rescheduled after rendering, so a single bad frame (a JS error
     // in a listener, a lost GL context) froze the sky for good.
     window.requestAnimationFrame(render)
-    if (Module.contextLost) return;
+    // Module.paused: the page shows something full screen (3D view) and the
+    // sky doesn't need to render underneath it.
+    if (Module.contextLost || Module.paused) return;
     try {
       Module._core_update();
       Module._core_render(displayWidth, displayHeight, dpr);

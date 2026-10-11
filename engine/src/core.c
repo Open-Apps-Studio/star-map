@@ -1000,8 +1000,18 @@ static int on_search(void *user, obj_t *obj)
 EMSCRIPTEN_KEEPALIVE
 obj_t *core_search(const char *query)
 {
-    obj_t *module, *ret = NULL;
+    obj_t *module, *planets, *ret = NULL;
+    // Star Map fix: search the planets module first. Modules are searched in
+    // order and the first match wins, so "NAME Io" found asteroid (85) Io
+    // instead of Jupiter's moon (same for Ganymede, Europa, Pandora...).
+    planets = core_get_module("planets");
+    if (planets) {
+        module_list_objs(planets, NAN, 0, NULL, USER_PASS((void*)query, &ret),
+                         on_search);
+        if (ret) return ret;
+    }
     DL_FOREACH(core->obj.children, module) {
+        if (module == planets) continue;
         module_list_objs(module, NAN, 0, NULL, USER_PASS((void*)query, &ret),
                          on_search);
     }

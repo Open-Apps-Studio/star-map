@@ -12,14 +12,19 @@ export type NativeIn =
   /** No location permission: orientation is magnetic, not true, north. */
   | { type: "north"; magnetic: boolean }
   /** What the phone can do (sent once the page is ready). */
-  | { type: "caps"; motion: boolean };
+  | { type: "caps"; motion: boolean }
+  /** Telescope connection state and position (J2000 radians). */
+  | { type: "telescope"; status: "off" | "connecting" | "connected" | "error"; message?: string; warning?: string; ra?: number; dec?: number };
 
 export type NativeOut =
   | { type: "haptic"; style: "light" | "medium" | "success" | "selection" }
   | { type: "ready" }
   | { type: "sensor-mode"; on: boolean }
   /** Page errors, written to the device log so crashes can be diagnosed. */
-  | { type: "log"; text: string };
+  | { type: "log"; text: string }
+  | { type: "telescope-connect"; protocol: "stellarium" | "lx200"; host: string; port: number }
+  | { type: "telescope-goto"; ra: number; dec: number }
+  | { type: "telescope-disconnect" };
 
 const rn = () => (window as any).ReactNativeWebView as { postMessage(s: string): void } | undefined;
 

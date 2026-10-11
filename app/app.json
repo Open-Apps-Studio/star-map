@@ -15,7 +15,8 @@
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "Star Map uses your location to show the sky exactly as it looks where you are.",
         "NSMotionUsageDescription": "Star Map uses motion sensors so the sky follows your phone when you point it up.",
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSLocalNetworkUsageDescription": "Star Map connects to your telescope on the local network to point it at objects."
       },
       "buildNumber": "4"
     },

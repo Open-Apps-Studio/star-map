@@ -14,10 +14,14 @@ public class StarMotionModule: Module {
   /// Whether CMRotationMatrix maps reference → device (needs transposing).
   /// Settled at runtime by checking which reading puts gravity straight down.
   private var transpose: Bool?
+  /// Telescope control over the local network (see TelescopeClient).
+  private lazy var telescope = TelescopeClient { [weak self] event in
+    self?.sendEvent("onTelescope", event)
+  }
 
   public func definition() -> ModuleDefinition {
     Name("StarMotion")
-    Events("onMotion")
+    Events("onMotion", "onTelescope")
 
     Function("isAvailable") { () -> Bool in
       self.manager.isDeviceMotionAvailable
@@ -41,8 +45,21 @@ public class StarMotionModule: Module {
       NSLog("[StarMap sky] %@", text)
     }
 
+    Function("telescopeConnect") { (host: String, port: Int, proto: String) in
+      self.telescope.connect(host: host, port: port, proto: proto)
+    }
+
+    Function("telescopeGoto") { (ra: Double, dec: Double) in
+      self.telescope.goto(ra: ra, dec: dec)
+    }
+
+    Function("telescopeDisconnect") {
+      self.telescope.disconnect()
+    }
+
     OnDestroy {
       self.manager.stopDeviceMotionUpdates()
+      self.telescope.disconnect()
     }
   }
 

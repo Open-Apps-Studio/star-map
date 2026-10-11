@@ -7,6 +7,10 @@ import "./style.css";
 import { abs, addOnlineSources, azAlt, probeCdn, bootEngine, D2R, knownNames, type SweObj } from "./engine";
 import { applySettings, settings } from "./settings";
 import { initLocation, onFix } from "./location";
+import { setOcular, updateOcular } from "./ocular";
+import { onScopeMessage, updateScopeMarker } from "./telescope";
+import { icon, MDI } from "./icons";
+import { init3D } from "./ui/view3d";
 import { buildCatalog, isResolved, resolve } from "./catalog";
 import { dateToMjd } from "./astro";
 import { inApp, listen, post } from "./bridge";
@@ -133,6 +137,8 @@ function initStartTime() {
 let lastSlow = 0;
 function frame(t: number) {
   updatePointer();
+  updateOcular();
+  updateScopeMarker();
   if (t - lastSlow > 250) {
     lastSlow = t;
     updateClock();
@@ -181,6 +187,9 @@ async function main() {
   initPointer();
   initSearch();
   initMenu();
+  init3D();
+  $("ocular-close").innerHTML = icon(MDI.mdiClose);
+  $("ocular-close").addEventListener("click", () => setOcular(null));
 
   // Tapping the sky closes any open panel (the engine handles selection).
   canvas.addEventListener("pointerdown", () => openPanel(null), { capture: true });
@@ -198,6 +207,7 @@ async function main() {
     if (msg.type === "calibrate") toast("Compass needs calibrating: wave your phone in a figure-8");
     if (msg.type === "north" && msg.magnetic) toast("Allow location for accurate north");
     if (msg.type === "caps") app.motion = msg.motion;
+    if (msg.type === "telescope") onScopeMessage(msg);
   });
 
   if (!resumeView()) faceBestTarget();
