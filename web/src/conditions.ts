@@ -57,7 +57,7 @@ export function getForecast(): Promise<Forecast | null> {
   if (inflight && inflightKey === key) return inflight;
   inflightKey = key;
   const url =
-    `https://api.open-meteo.com/v1/forecast?latitude=${lat.toFixed(3)}&longitude=${lon.toFixed(3)}` +
+    `https://api.open-meteo.com/v1/forecast?latitude=${lat.toFixed(2)}&longitude=${lon.toFixed(2)}` +
     "&hourly=cloud_cover,cloud_cover_low,cloud_cover_mid,cloud_cover_high,relative_humidity_2m,temperature_2m,dew_point_2m,wind_speed_10m,precipitation_probability" +
     "&forecast_days=8&timeformat=unixtime&timezone=GMT";
   inflight = fetch(url)
