@@ -17,7 +17,7 @@
         "NSMotionUsageDescription": "Star Map uses motion sensors so the sky follows your phone when you point it up.",
         "ITSAppUsesNonExemptEncryption": false
       },
-      "buildNumber": "3"
+      "buildNumber": "4"
     },
     "android": {
       "package": "com.ahmet.starmap",
