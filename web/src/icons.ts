@@ -8,7 +8,7 @@ import {
   mdiLayersOutline, mdiMagnify, mdiMapMarkerOutline, mdiMenu, mdiMenuDown, mdiMenuUp, mdiMinusCircleOutline, mdiPause,
   mdiPlay, mdiPlusCircleOutline, mdiRestore, mdiSatelliteVariant, mdiSkipNext, mdiSkipPrevious, mdiWeatherNight,
   mdiInformationOutline, mdiStarFourPoints,
-  mdiBinoculars, mdiCalendarStar, mdiCamera, mdiCircleHalfFull, mdiCogOutline, mdiCubeOutline, mdiMeteor, mdiMoonWaningCrescent, mdiOrbit, mdiRotate3d, mdiStar, mdiStarOutline, mdiTelescope, mdiWeatherSunset, mdiWhiteBalanceSunny, mdiClose, mdiTarget, mdiPlus, mdiDeleteOutline, mdiCheck, mdiBellOutline, mdiBellRing,
+  mdiBinoculars, mdiCalendarStar, mdiCamera, mdiCircleHalfFull, mdiCogOutline, mdiCubeOutline, mdiMeteor, mdiMoonWaningCrescent, mdiOrbit, mdiRotate3d, mdiStar, mdiStarOutline, mdiTelescope, mdiWeatherSunset, mdiWhiteBalanceSunny, mdiClose, mdiTarget, mdiPlus, mdiDeleteOutline, mdiCheck, mdiBellOutline, mdiBellRing, mdiShareVariant,
 } from "@mdi/js";
 import { PLANET_THUMBS } from "./planet-thumbs";
 
@@ -17,7 +17,7 @@ export const MDI: Record<string, string> = {
   mdiLayersOutline, mdiMagnify, mdiMapMarkerOutline, mdiMenu, mdiMenuDown, mdiMenuUp, mdiMinusCircleOutline, mdiPause,
   mdiPlay, mdiPlusCircleOutline, mdiRestore, mdiSatelliteVariant, mdiSkipNext, mdiSkipPrevious, mdiWeatherNight,
   mdiInformationOutline, mdiStarFourPoints,
-  mdiBinoculars, mdiCalendarStar, mdiCamera, mdiCircleHalfFull, mdiCogOutline, mdiCubeOutline, mdiMeteor, mdiMoonWaningCrescent, mdiOrbit, mdiRotate3d, mdiStar, mdiStarOutline, mdiTelescope, mdiWeatherSunset, mdiWhiteBalanceSunny, mdiClose, mdiTarget, mdiPlus, mdiDeleteOutline, mdiCheck, mdiBellOutline, mdiBellRing,
+  mdiBinoculars, mdiCalendarStar, mdiCamera, mdiCircleHalfFull, mdiCogOutline, mdiCubeOutline, mdiMeteor, mdiMoonWaningCrescent, mdiOrbit, mdiRotate3d, mdiStar, mdiStarOutline, mdiTelescope, mdiWeatherSunset, mdiWhiteBalanceSunny, mdiClose, mdiTarget, mdiPlus, mdiDeleteOutline, mdiCheck, mdiBellOutline, mdiBellRing, mdiShareVariant,
 };
 
 export const icon = (path: string) => `<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="${path}"/></svg>`;

@@ -5,6 +5,7 @@
  */
 import { pathShown, togglePath } from "./path";
 import { attachDsoPhoto } from "../dso-photo";
+import { shareSky } from "../share";
 import { $, app, haptic } from "../state";
 import { icon, MDI, objectIcon, kindFromOtype, type IconKind } from "../icons";
 import { azAlt, displayName, withObserverCopy, type SweObj } from "../engine";
@@ -160,6 +161,7 @@ function renderTools() {
       gotoScope(app.stel.anp(ra), app.stel.anpm(dec), displayName(obj));
     });
   }
+  add(MDI.mdiShareVariant, "Share", () => shareSky(displayName(obj)));
   const eyepiece = activeOcular() ?? settings.oculars.find((o) => o.kind !== "telrad") ?? settings.oculars[0];
   if (eyepiece && iconKind(obj) !== "constellation") {
     add(MDI.mdiBinoculars, activeOcular() ? "Hide view" : eyepiece.name, () => {

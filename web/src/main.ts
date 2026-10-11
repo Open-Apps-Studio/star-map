@@ -25,6 +25,7 @@ import { refreshAutoAlerts } from "./alerts";
 import { initAr, onCameraState } from "./ar";
 import { drawPath } from "./ui/path";
 import { initAmbient } from "./ambient";
+import { captureIfRequested } from "./share";
 import { closePages } from "./ui/page";
 
 // ---------------------------------------------------------------- first view
@@ -145,6 +146,7 @@ function frame(t: number) {
   updateOcular();
   updateScopeMarker();
   drawPath();
+  captureIfRequested();
   if (t - lastSlow > 250) {
     lastSlow = t;
     updateClock();

@@ -7,7 +7,7 @@
  * Messages: page → app via postMessage; app → page via window.__starmap.onNative.
  */
 import { useCallback, useEffect, useRef, useState } from "react";
-import { StyleSheet, View } from "react-native";
+import { Share, StyleSheet, View } from "react-native";
 import { WebView, type WebViewMessageEvent } from "react-native-webview";
 import { Paths } from "expo-file-system";
 import * as Haptics from "expo-haptics";
@@ -31,6 +31,7 @@ type PageMessage =
   | { type: "telescope-goto"; ra: number; dec: number }
   | { type: "telescope-disconnect" }
   | { type: "camera"; on: boolean }
+  | { type: "share"; dataUrl: string; message: string }
   | { type: "notify-schedule"; id: string; at: number; title: string; body: string; data: { mjd?: number; target?: string } }
   | { type: "notify-cancel"; id?: string; prefix?: string };
 
@@ -153,6 +154,12 @@ export default function Sky() {
           send({ type: "notify-open", data: pendingOpen.current });
           pendingOpen.current = null;
         }
+      }
+      if (msg.type === "share") {
+        // iOS shares a base64 data URL as an image. Image only: with a message
+        // too, the sheet previews the text instead of the picture (the
+        // snapshot carries its own caption strip).
+        Share.share({ url: msg.dataUrl }).catch((err) => StarMotion.log(`share: ${err}`));
       }
       if (msg.type === "camera") {
         if (!msg.on) {

@@ -74,11 +74,15 @@ export function renderAltGraph(box: HTMLElement, obj: SweObj) {
   if (!cache || cache.v !== obj.v || Math.abs(cache.start - start) > 1e-6 || !box.firstChild) {
     cache = compute(obj, start);
     const c = cache;
+    // One rect per run of the same twilight band. (Per-sample slivers that
+    // overlap by a fraction of a pixel stack their alpha into visible stripes.)
     let bands = "";
-    for (let i = 0; i < N; i++) {
+    for (let i = 0; i < N; ) {
       const col = bandColor((c.sun[i] + c.sun[i + 1]) / 2);
-      if (col.endsWith(",0)")) continue;
-      bands += `<rect x="${(i / N) * W}" y="${top}" width="${W / N + 0.6}" height="${H - top - bottom}" fill="${col}" shape-rendering="crispEdges"/>`;
+      let j = i + 1;
+      while (j < N && bandColor((c.sun[j] + c.sun[j + 1]) / 2) === col) j++;
+      if (!col.endsWith(",0)")) bands += `<rect x="${((i / N) * W).toFixed(2)}" y="${top}" width="${(((j - i) / N) * W).toFixed(2)}" height="${H - top - bottom}" fill="${col}"/>`;
+      i = j;
     }
     const pts = c.alt.map((a, i) => `${((i / N) * W).toFixed(1)},${y(a).toFixed(1)}`).join(" ");
     const ticks = [0, 6, 12, 18, 24]

@@ -31,6 +31,8 @@ export type NativeOut =
   | { type: "telescope-connect"; protocol: "stellarium" | "lx200"; host: string; port: number }
   | { type: "telescope-goto"; ra: number; dec: number }
   | { type: "telescope-disconnect" }
+  /** Open the share sheet with a sky snapshot (JPEG data URL). */
+  | { type: "share"; dataUrl: string; message: string }
   /** Show the camera behind the sky (AR mode). */
   | { type: "camera"; on: boolean }
   /** Local notification at `at` (ms since epoch); same id replaces. */
