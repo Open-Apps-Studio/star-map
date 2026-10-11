@@ -11,7 +11,7 @@ import { inApp, post } from "./bridge";
 import { app, toast } from "./state";
 import { settings, saveSettings } from "./settings";
 import { compass, fmtTime, mjdToDate } from "./astro";
-import { computeEvents, nextPasses, type SkyEvent } from "./events";
+import { computeEvents, loadMeteorShowers, nextPasses, type SkyEvent } from "./events";
 import { withObserverCopy, type SweObj } from "./engine";
 
 const mjdToMs = (mjd: number) => (mjd - 40587) * 86400e3;
@@ -110,13 +110,13 @@ function runAuto() {
     }
   }
   if (settings.alerts.events) {
-    // Events need the satellites idle; do the year-sized search off the startup path.
-    setTimeout(() => {
+    // The six-week search runs off the startup path, after the shower list loads.
+    loadMeteorShowers().catch(() => {}).then(() => {
       for (const ev of computeEvents(Math.floor(now), 42).filter(bigEvent)) {
         const at = eventReminderTime(ev);
         schedule(`auto-${eventKey(ev)}`, at, ev.title, ev.detail, { mjd: ev.mjd, target: ev.target });
       }
-    }, 50);
+    });
   }
 }
 
