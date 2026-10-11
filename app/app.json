@@ -3,7 +3,7 @@
     "name": "Star Map",
     "slug": "star-map",
     "owner": "ahmet909",
-    "version": "0.1.0",
+    "version": "1.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "starmap",

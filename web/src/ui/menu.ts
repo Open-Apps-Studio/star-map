@@ -23,13 +23,15 @@ function openDrawer(on: boolean) {
 }
 
 function about(body: HTMLElement) {
-  body.innerHTML = `<p>Star Map is a free star map, with no ads, accounts or paywalls.</p>
+  body.innerHTML = `<p>Star Map shows the real sky for wherever you are: stars, planets, the Moon, deep-sky objects and satellites. No ads, no accounts, no paywalls. Every feature is unlocked.</p>
+    <h3>Open source</h3>
+    <p>The full source code is on <a href="https://github.com/Open-Apps-Studio/star-map">GitHub</a> under the AGPL-3.0 licence. Found a bug or want a feature? <a href="https://github.com/Open-Apps-Studio/star-map/issues">Open an issue</a> or email <a href="mailto:ahmetdedelerr@gmail.com">ahmetdedelerr@gmail.com</a>.</p>
     <h3>Built on</h3>
     <p><a href="https://github.com/Stellarium/stellarium-web-engine">Stellarium Web Engine</a> (AGPL-3.0) by Stellarium Labs, compiled to run fully on your phone.</p>
     <h3>Data</h3>
-    <p>Stars: Hipparcos, Tycho and Gaia DR3 (ESA) via Stellarium. Deep-sky objects and sky photos (Digitized Sky Survey, STScI/CDS): Stellarium. Sky cultures and landscapes: the Stellarium project and their authors. Satellite orbits: CelesTrak. Comets and asteroids: Minor Planet Center. Planet maps: Solar System Scope (CC BY 4.0). Place search: OpenStreetMap (Photon). Object descriptions: Wikipedia.</p>
-    <h3>Open source</h3>
-    <p>Made by Open Apps Studio.</p>`;
+    <p>Stars: Hipparcos, Tycho and Gaia DR3 (ESA) via Stellarium. Deep-sky objects, sky cultures and landscapes: the Stellarium project and their authors. Sky photos: Digitized Sky Survey (STScI) via CDS. Satellite orbits: CelesTrak and SatNOGS. Comets and asteroids: Minor Planet Center. Weather: Open-Meteo (CC BY 4.0). Planet maps: Solar System Scope (CC BY 4.0). 3D models: NASA. Place search: OpenStreetMap (Photon). Object descriptions: Wikipedia. Full credits are in the repository.</p>
+    <h3>More from Open Apps Studio</h3>
+    <p>Apps like this one, with nothing locked: <a href="https://apps.apple.com/app/id6788418444">Mental Math</a>, <a href="https://apps.apple.com/app/id6781818611">Periodic Table</a> and <a href="https://apps.apple.com/app/id6781818623">Learn Languages</a>. More at <a href="https://openappsstudio.com">openappsstudio.com</a>.</p>`;
 }
 
 export function initMenu() {

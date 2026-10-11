@@ -7,7 +7,7 @@
  * Messages: page → app via postMessage; app → page via window.__starmap.onNative.
  */
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Share, StyleSheet, View } from "react-native";
+import { Linking, Share, StyleSheet, View } from "react-native";
 import { WebView, type WebViewMessageEvent } from "react-native-webview";
 import { Paths } from "expo-file-system";
 import * as Haptics from "expo-haptics";
@@ -233,6 +233,15 @@ export default function Sky() {
         allowFileAccessFromFileURLs
         allowUniversalAccessFromFileURLs
         onMessage={onMessage}
+        // Links (About, Wikipedia, credits) open in Safari; the page itself never navigates away.
+        onShouldStartLoadWithRequest={(req) => {
+          if (req.url.startsWith("file:") || req.url.startsWith("about:") || req.url.startsWith("blob:") || req.url.startsWith("data:")) return true;
+          if (req.navigationType === "click" || /^(https?|mailto|itms-apps):/.test(req.url)) {
+            Linking.openURL(req.url).catch(() => {});
+            return false;
+          }
+          return true;
+        }}
         // iOS kills the web content process under memory pressure (often
         // while the app is in the background). Without this the sky stays
         // blank until the app is force-quit.
