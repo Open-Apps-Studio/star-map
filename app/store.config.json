@@ -1,0 +1,47 @@
+{
+  "configVersion": 0,
+  "apple": {
+    "version": "1.0",
+    "copyright": "2026 Ahmet Dedeler",
+    "release": {
+      "automaticRelease": true
+    },
+    "categories": [
+      "REFERENCE",
+      "EDUCATION"
+    ],
+    "review": {
+      "firstName": "Ahmet",
+      "lastName": "Dedeler",
+      "email": "ahmetdedelerr@gmail.com",
+      "phone": "+905308957820",
+      "notes": "No account or login is required, and there are no in-app purchases, ads or tracking.\n\nPermissions: Location (optional) shows the sky for where you are and gives true north. Motion: when you tap the compass button the view follows the phone. Camera: only in AR mode (the camera button that appears in pointing mode), shown on screen, never recorded. Notifications: ISS and sky-event alerts, off until you turn them on in Settings > Alerts or tap a bell. Local network: optional telescope control (Menu > Instruments).\n\nThe sky engine is the open-source Stellarium Web Engine (AGPL-3.0); this app's full source is public at https://github.com/Open-Apps-Studio/star-map. Weather comes from Open-Meteo, descriptions from Wikipedia."
+    },
+    "info": {
+      "en-US": {
+        "title": "(Open Source) Star Map",
+        "subtitle": "Night Sky & Stargazing Guide",
+        "description": "See the real sky above you, wherever you are. Hold your phone up and Star Map shows every star, planet, constellation, galaxy and satellite in that direction, live.\n\nOther star apps lock the good stuff behind a subscription: moving time forward, tonight's best targets, the events calendar, deep zoom, alerts. In Star Map all of it is unlocked from the start, and the whole app is open source.\n\nPOINT AT THE SKY\n- The sky follows your phone (gyroscope + compass, true north)\n- AR mode: stars, lines and names over your camera view\n- All 88 constellations with lines, names and artwork, plus 34 sky cultures from around the world\n- Planets with real surfaces, the Moon with its phase, comets, asteroids, the Milky Way\n- Stars to magnitude 8 offline, much deeper when online\n\nPLAN TONIGHT\n- Sunset, darkness and dawn times, the Moon, and when each planet is up\n- Sky conditions: hourly clouds, humidity, wind and a 0-100 stargazing score for the next 7 nights\n- Visible satellite passes (ISS, Tiangong, Hubble and the bright ones)\n- The best galaxies, nebulae and clusters for tonight, with real photos\n\nNEVER MISS A THING\n- 12-month sky calendar: eclipses (with local times), meteor shower peaks, oppositions, conjunctions, Moon phases\n- ISS alerts 5 minutes before every visible pass\n- Reminders for any event or satellite pass\n\nGO DEEPER\n- Tap anything: where it is, rise and set times, best time tonight, altitude graph, distance, size and a short description\n- Path tonight: see an object's track across your sky, hour by hour\n- Planets, the ISS and Hubble in 3D\n- Time travel to any date, with a speed slider\n- Eyepiece, camera, binocular and Telrad overlays for your own gear\n- Telescope control over Wi-Fi (LX200 and Stellarium protocol)\n- Search 80,000+ objects offline by name or catalogue number (M31, NGC 7000, HIP...)\n- Night mode, light pollution, landscapes, grids and lines\n- Share a snapshot of the sky\n\nNo ads. No account. No tracking.\n\nBuilt on the open-source Stellarium Web Engine. The full source code of Star Map is public (AGPL-3.0), see it, audit it or contribute at https://github.com/Open-Apps-Studio/star-map\n\nMade by Open Apps Studio, also behind Mental Math, Periodic Table and Learn Languages.",
+        "keywords": [
+          "constellation",
+          "planet",
+          "astronomy",
+          "telescope",
+          "iss",
+          "satellite",
+          "tracker",
+          "ar",
+          "moon",
+          "galaxy",
+          "finder",
+          "chart",
+          "eclipse"
+        ],
+        "promoText": "Every feature unlocked: AR sky view, tonight's best targets, a stargazing forecast, a year of sky events and ISS alerts. Open source, no ads, no account.",
+        "supportUrl": "https://open-apps-studio.github.io/starmap/support/",
+        "privacyPolicyUrl": "https://open-apps-studio.github.io/starmap/privacy/",
+        "marketingUrl": "https://github.com/Open-Apps-Studio/star-map"
+      }
+    }
+  }
+}

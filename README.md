@@ -6,6 +6,14 @@ By [Open Apps Studio](https://openappsstudio.com). No ads, no accounts, no paywa
 
 <!-- [Download on the App Store](https://apps.apple.com/app/id6821444135) -->
 
+<p>
+  <img src="screenshots/final/01-sky.png" width="19%" alt="The sky with constellations">
+  <img src="screenshots/final/02-tonight.png" width="19%" alt="Tonight: conditions and planets">
+  <img src="screenshots/final/03-path.png" width="19%" alt="Jupiter's path tonight">
+  <img src="screenshots/final/05-calendar.png" width="19%" alt="Sky calendar">
+  <img src="screenshots/final/07-3d.png" width="19%" alt="Jupiter in 3D">
+</p>
+
 ## Why
 
 Every good star app on the App Store locks the useful stuff. Stellarium Mobile wants $1.99–$18.99 for moving time forward and the events calendar, Sky Guide sells "All Constellations" for $1.99 and subscriptions up to $249.99, Night Sky and Sky Tonight put tonight's best targets and reminders behind a subscription. One App Store review of Stellarium Mobile says it pretty well: "simply moving time forwards is a paid feature??"

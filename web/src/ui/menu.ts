@@ -25,7 +25,7 @@ function openDrawer(on: boolean) {
 function about(body: HTMLElement) {
   body.innerHTML = `<p>Star Map shows the real sky for wherever you are: stars, planets, the Moon, deep-sky objects and satellites. No ads, no accounts, no paywalls. Every feature is unlocked.</p>
     <h3>Open source</h3>
-    <p>The full source code is on <a href="https://github.com/Open-Apps-Studio/star-map">GitHub</a> under the AGPL-3.0 licence. Found a bug or want a feature? <a href="https://github.com/Open-Apps-Studio/star-map/issues">Open an issue</a> or email <a href="mailto:ahmetdedelerr@gmail.com">ahmetdedelerr@gmail.com</a>.</p>
+    <p>The full source code is on <a href="https://github.com/Open-Apps-Studio/star-map">GitHub</a> under the AGPL-3.0 licence. Found a bug or want a feature? <a href="https://github.com/Open-Apps-Studio/star-map/issues">Open an issue</a> or email <a href="mailto:ahmet@ahmetdedeler.com">ahmet@ahmetdedeler.com</a>.</p>
     <h3>Built on</h3>
     <p><a href="https://github.com/Stellarium/stellarium-web-engine">Stellarium Web Engine</a> (AGPL-3.0) by Stellarium Labs, compiled to run fully on your phone.</p>
     <h3>Data</h3>

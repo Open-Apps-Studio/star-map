@@ -97,6 +97,11 @@ export function bootEngine(canvas: HTMLCanvasElement): Promise<Stel> {
         core.constellations.lines_visible = true;
         core.constellations.labels_visible = true;
         core.constellations.images_visible = true;
+        // Every constellation, not just the one in the middle of the screen
+        // (the engine's default), like Stellarium Mobile and Sky Guide; the
+        // artwork a bit fainter so it doesn't bury the stars.
+        core.constellations.show_only_pointed = false;
+        core.constellations.illustrations_bscale = 0.55;
         core.atmosphere.visible = true;
         core.landscapes.visible = true;
         core.dsos.visible = true;
