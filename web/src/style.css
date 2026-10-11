@@ -291,3 +291,4 @@ button.tn-row { width: 100%; text-align: left; }
 .card-graph .best { fill: #ffd65a; }
 .card-graph text { fill: var(--muted); font-size: 9px; font-family: inherit; }
 .card-graph text.gl { font-size: 8px; }
+.row.past { opacity: .45; }

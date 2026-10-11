@@ -58,6 +58,8 @@ function tiles(): Tile[] {
     { label: "Deep sky", img: nebulae, get: () => c().dsos.visible, set: (v) => (c().dsos.visible = v) },
     { label: "Satellites", svg: icon(MDI.mdiSatelliteVariant), get: () => c().satellites.visible, set: (v) => (c().satellites.visible = v) },
     { label: "Milky Way", svg: icon(MDI.mdiChartBellCurve), get: () => c().milkyway.visible, set: (v) => (c().milkyway.visible = v) },
+    // Real photos of the sky (DSS) when zoomed in; streamed when online.
+    { label: "Sky photos", svg: icon(MDI.mdiImageFilterHdr), get: () => c().dss.visible, set: (v) => (c().dss.visible = v) },
     { label: "Night mode", img: nightMode, get: () => document.body.classList.contains("night"), set: setNight },
   ];
 }

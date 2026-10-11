@@ -127,7 +127,7 @@ async function passesBox(body: HTMLElement, night: Night) {
     return;
   }
   for (const p of passes) {
-    const row = el("button", "row");
+    const row = el("button", "row" + (p.set < dateToMjd(new Date()) ? " past" : ""));
     row.innerHTML = `<span class="pass-time"></span><span class="row-text"><span class="row-label"></span><span class="row-sub"></span></span>`;
     row.querySelector(".pass-time")!.textContent = fmtTime(p.rise);
     row.querySelector(".row-label")!.textContent = p.name;
