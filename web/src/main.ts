@@ -21,6 +21,10 @@ import { initCard, onUnlock, showCard, updateFacts } from "./ui/card";
 import { initPointer, sensors, updatePointer } from "./ui/pointer";
 import { initSearch } from "./ui/search";
 import { initMenu } from "./ui/menu";
+import { refreshAutoAlerts } from "./alerts";
+import { initAr, onCameraState } from "./ar";
+import { drawPath } from "./ui/path";
+import { closePages } from "./ui/page";
 
 // ---------------------------------------------------------------- first view
 /** Open facing the brightest planet that's up (else south), horizon low. */
@@ -139,6 +143,7 @@ function frame(t: number) {
   updatePointer();
   updateOcular();
   updateScopeMarker();
+  drawPath();
   if (t - lastSlow > 250) {
     lastSlow = t;
     updateClock();
@@ -185,6 +190,7 @@ async function main() {
   initTime();
   initCard();
   initPointer();
+  initAr();
   initSearch();
   initMenu();
   init3D();
@@ -203,7 +209,13 @@ async function main() {
 
   listen((msg) => {
     if (msg.type === "motion") sensors.pushNativeMatrix(msg.m);
-    if (msg.type === "location") onFix(msg.lat, msg.lon, msg.alt ?? 0);
+    if (msg.type === "location") {
+      onFix(msg.lat, msg.lon, msg.alt ?? 0);
+      refreshAutoAlerts();
+    }
+    if (msg.type === "camera-state") onCameraState(msg.on, msg.denied);
+    if (msg.type === "notify-open") openFromNotification(msg.data);
+    if (msg.type === "notify-permission" && !msg.granted) toast("Notifications are off for Star Map. Turn them on in iOS Settings.", 4500);
     if (msg.type === "calibrate") toast("Compass needs calibrating: wave your phone in a figure-8");
     if (msg.type === "north" && msg.magnetic) toast("Allow location for accurate north");
     if (msg.type === "caps") app.motion = msg.motion;
@@ -217,6 +229,22 @@ async function main() {
 
   app.catalog = await buildCatalog(abs("skydata/"));
   prefetchStarNames();
+  refreshAutoAlerts();
+}
+
+/** A tapped notification: jump to that moment and object. */
+function openFromNotification(data: { mjd?: number; target?: string }) {
+  closePages();
+  if (typeof data.mjd === "number") {
+    app.obs.utc = data.mjd;
+    app.core.time_speed = 1;
+    updateClock();
+  }
+  const obj = data.target ? app.stel.getObj(data.target) : null;
+  if (obj) {
+    app.core.selection = obj;
+    ($("center-btn") as HTMLButtonElement).click();
+  }
 }
 
 main();

@@ -8,6 +8,7 @@ import { getJson } from "../catalog";
 import { DEFAULTS, setSetting, settings, saveSettings, applySettings } from "../settings";
 import { buttonRow, choiceList, navRow, pushPage, refreshPage, section, segmented, sliderRow, switchRow } from "./page";
 import { toast } from "../state";
+import { alertsAvailable, refreshAutoAlerts } from "../alerts";
 
 interface Meta {
   skycultures: { id: string; name: string; region: string; art: boolean }[];
@@ -75,6 +76,15 @@ export async function openSettings() {
     switchRow(box, "Meteor showers", () => settings.meteors, (v) => setSetting("meteors", v), "Shooting stars at their real rate");
 
     // ---- stars
+    box = section(body, "Alerts", alertsAvailable() ? "Notifications, worked out for your location. They update each time you open the app." : "Notifications work in the Star Map app.");
+    const setAlert = (k: "iss" | "events") => (v: boolean) => {
+      settings.alerts = { ...settings.alerts, [k]: v };
+      saveSettings();
+      refreshAutoAlerts(300);
+    };
+    switchRow(box, "ISS flyovers", () => settings.alerts.iss, setAlert("iss"), "5 minutes before every visible pass");
+    switchRow(box, "Sky events", () => settings.alerts.events, setAlert("events"), "Eclipses, meteor showers, full and new Moons, close conjunctions");
+
     box = section(body, "Stars");
     sliderRow(box, "Magnitude limit", {
       min: 4, max: 21, step: 0.5,

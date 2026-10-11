@@ -8,7 +8,7 @@ import {
   mdiLayersOutline, mdiMagnify, mdiMapMarkerOutline, mdiMenu, mdiMenuDown, mdiMenuUp, mdiMinusCircleOutline, mdiPause,
   mdiPlay, mdiPlusCircleOutline, mdiRestore, mdiSatelliteVariant, mdiSkipNext, mdiSkipPrevious, mdiWeatherNight,
   mdiInformationOutline, mdiStarFourPoints,
-  mdiBinoculars, mdiCalendarStar, mdiCamera, mdiCircleHalfFull, mdiCogOutline, mdiCubeOutline, mdiMeteor, mdiMoonWaningCrescent, mdiOrbit, mdiRotate3d, mdiStar, mdiStarOutline, mdiTelescope, mdiWeatherSunset, mdiWhiteBalanceSunny, mdiClose, mdiTarget, mdiPlus, mdiDeleteOutline, mdiCheck,
+  mdiBinoculars, mdiCalendarStar, mdiCamera, mdiCircleHalfFull, mdiCogOutline, mdiCubeOutline, mdiMeteor, mdiMoonWaningCrescent, mdiOrbit, mdiRotate3d, mdiStar, mdiStarOutline, mdiTelescope, mdiWeatherSunset, mdiWhiteBalanceSunny, mdiClose, mdiTarget, mdiPlus, mdiDeleteOutline, mdiCheck, mdiBellOutline, mdiBellRing,
 } from "@mdi/js";
 import { PLANET_THUMBS } from "./planet-thumbs";
 
@@ -17,7 +17,7 @@ export const MDI: Record<string, string> = {
   mdiLayersOutline, mdiMagnify, mdiMapMarkerOutline, mdiMenu, mdiMenuDown, mdiMenuUp, mdiMinusCircleOutline, mdiPause,
   mdiPlay, mdiPlusCircleOutline, mdiRestore, mdiSatelliteVariant, mdiSkipNext, mdiSkipPrevious, mdiWeatherNight,
   mdiInformationOutline, mdiStarFourPoints,
-  mdiBinoculars, mdiCalendarStar, mdiCamera, mdiCircleHalfFull, mdiCogOutline, mdiCubeOutline, mdiMeteor, mdiMoonWaningCrescent, mdiOrbit, mdiRotate3d, mdiStar, mdiStarOutline, mdiTelescope, mdiWeatherSunset, mdiWhiteBalanceSunny, mdiClose, mdiTarget, mdiPlus, mdiDeleteOutline, mdiCheck,
+  mdiBinoculars, mdiCalendarStar, mdiCamera, mdiCircleHalfFull, mdiCogOutline, mdiCubeOutline, mdiMeteor, mdiMoonWaningCrescent, mdiOrbit, mdiRotate3d, mdiStar, mdiStarOutline, mdiTelescope, mdiWeatherSunset, mdiWhiteBalanceSunny, mdiClose, mdiTarget, mdiPlus, mdiDeleteOutline, mdiCheck, mdiBellOutline, mdiBellRing,
 };
 
 export const icon = (path: string) => `<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="${path}"/></svg>`;
@@ -33,6 +33,10 @@ export function hydrateIcons(root: ParentNode = document) {
 const PLANET_COLORS: Record<string, string> = {
   Sun: "#ffd65a", Mercury: "#a9a39b", Venus: "#efe2b8", Mars: "#d9774f", Jupiter: "#d9b48c",
   Saturn: "#e6cf98", Uranus: "#a6dbe3", Neptune: "#5f86e6", Pluto: "#c9b29a",
+  // Moons (no maps bundled): their real tints.
+  Io: "#e8d36a", Europa: "#d8c9ad", Ganymede: "#a99e8f", Callisto: "#7d7266", Titan: "#d9a24e", Enceladus: "#f2f4f6",
+  Rhea: "#bdb8b0", Iapetus: "#9b8f80", Dione: "#c9c6c0", Tethys: "#d7d4ce", Mimas: "#b8b4ad", Phobos: "#8a7d70", Deimos: "#a09080",
+  Triton: "#d9c7c0", Titania: "#b3aaa3", Oberon: "#a39a92", Miranda: "#b9b4ae", Charon: "#9d958e",
 };
 
 /** Astronomical symbols. U+FE0E forces text presentation so iOS doesn't draw ♀/♂ as emoji. */

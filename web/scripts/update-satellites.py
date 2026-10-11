@@ -20,6 +20,14 @@ def fetch(group):
     for i in range(0, len(lines) - 2, 3):
         yield lines[i].strip(), lines[i + 1].rstrip(), lines[i + 2].rstrip()
 
+def fetch_satnogs():
+    """Fallback: SatNOGS mirrors Space-Track TLEs and has no 2-hour rate limit."""
+    req = urllib.request.Request("https://db.satnogs.org/api/tle/?format=json", headers={"User-Agent": "star-map-prototype"})
+    for r in json.loads(urllib.request.urlopen(req, timeout=40).read()):
+        yield r["tle0"].removeprefix("0 ").strip(), r["tle1"].strip(), r["tle2"].strip()
+
+STATIONS = {25544, 48274}  # ISS, Tiangong
+
 def main(old_path, out_path):
     old = {}
     with gzip.open(old_path, "rt") as f:
@@ -28,21 +36,25 @@ def main(old_path, out_path):
                 d = json.loads(line)
                 old[d["model_data"]["norad_number"]] = d
     out, seen = [], set()
-    for group in GROUPS:
-        for name, l1, l2 in fetch(group):
-            norad = int(l1[2:7])
-            if norad in seen:
-                continue
-            seen.add(norad)
-            d = old.get(norad) or {
-                "types": ["Asa"], "model": "tle_satellite",
-                "model_data": {"norad_number": norad, "group": ["Visual"]},
-                "names": [f"NAME {name}", f"NORAD {norad}"],
-                "short_name": name, "interest": 3.1,
-            }
-            d["model_data"]["tle"] = [l1, l2]
-            d["model_data"]["designation"] = l1[9:17].strip()
-            out.append(d)
+    try:
+        sources, only_known = [t for g in GROUPS for t in fetch(g)], False
+    except Exception as e:
+        print(f"CelesTrak failed ({e}); using SatNOGS")
+        sources, only_known = list(fetch_satnogs()), True
+    for name, l1, l2 in sources:
+        norad = int(l1[2:7])
+        if norad in seen or (only_known and norad not in old and norad not in STATIONS):
+            continue
+        seen.add(norad)
+        d = old.get(norad) or {
+            "types": ["Asa"], "model": "tle_satellite",
+            "model_data": {"norad_number": norad, "group": ["Visual"]},
+            "names": [f"NAME {name}", f"NORAD {norad}"],
+            "short_name": name, "interest": 3.1,
+        }
+        d["model_data"]["tle"] = [l1, l2]
+        d["model_data"]["designation"] = l1[9:17].strip()
+        out.append(d)
     if len(out) < 20:
         raise SystemExit(f"Only {len(out)} satellites fetched; keeping old file")
     with gzip.open(out_path, "wt") as f:

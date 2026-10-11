@@ -18,7 +18,7 @@ Module['onRuntimeInitialized'] = function() {
   if (Module.canvasElement) Module.canvas = Module.canvasElement;
   if (Module.canvas) {
     var contextAttributes = {};
-    contextAttributes.alpha = false;
+    contextAttributes.alpha = true; // Star Map: AR camera mode needs a see-through canvas
     contextAttributes.depth = true;
     contextAttributes.stencil = true;
     contextAttributes.antialias = true;

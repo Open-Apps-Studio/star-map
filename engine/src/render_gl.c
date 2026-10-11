@@ -24,6 +24,14 @@
 
 #include <float.h>
 
+/* Star Map: clear to transparent instead of black (AR camera mode). */
+static int g_render_transparent = 0;
+EMSCRIPTEN_KEEPALIVE
+void render_set_transparent(int on)
+{
+    g_render_transparent = on;
+}
+
 #define GRID_CACHE_SIZE (2 * (1 << 20))
 
 // Fix GL_PROGRAM_POINT_SIZE support on Mac.
@@ -1714,7 +1722,10 @@ static void rend_flush(renderer_t *rend)
 
     // Set default OpenGL state.
     // Make sure we clear everything.
-    GL(glClearColor(0.0, 0.0, 0.0, 1.0));
+    // Star Map: a transparent clear lets the camera show through in AR
+    // mode (the alpha channel is never written after this clear, so every
+    // pixel composites additively over the camera view).
+    GL(glClearColor(0.0, 0.0, 0.0, g_render_transparent ? 0.0 : 1.0));
     GL(glColorMask(true, true, true, true));
     GL(glDepthMask(true));
     GL(glStencilMask(0xff));

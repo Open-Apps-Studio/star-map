@@ -3,6 +3,7 @@
  * a Center button that becomes Zoom −/+ once centred. Swipe up for details
  * (facts + Wikipedia summary when online), swipe down to dismiss.
  */
+import { pathShown, togglePath } from "./path";
 import { $, app, haptic } from "../state";
 import { icon, MDI, objectIcon, kindFromOtype, type IconKind } from "../icons";
 import { azAlt, displayName, withObserverCopy, type SweObj } from "../engine";
@@ -142,6 +143,13 @@ function renderTools() {
     box.appendChild(b);
   };
   if (can3D(obj)) add(MDI.mdiRotate3d, "3D view", () => open3D(obj));
+  const k = iconKind(obj);
+  if (k !== "constellation" && k !== "satellite") {
+    add(MDI.mdiChartBellCurve, pathShown(obj) ? "Hide path" : displayName(obj) === "Sun" ? "Path today" : "Path tonight", () => {
+      togglePath(obj);
+      renderTools();
+    });
+  }
   if (settings.telescope && scope.status === "connected") {
     add(MDI.mdiTelescope, "Slew", () => {
       const v = obj.getInfo("radec") as number[];

@@ -297,3 +297,36 @@ button.tn-row { width: 100%; text-align: left; }
 .card-graph text { fill: var(--muted); font-size: 9px; font-family: inherit; }
 .card-graph text.gl { font-size: 8px; }
 .row.past { opacity: .45; }
+
+/* Observing conditions */
+.cond-top { display: flex; align-items: center; gap: 14px; padding: 12px 14px 8px; }
+.cond-score { flex: none; display: inline-flex; flex-direction: column; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 50%; border: 2.5px solid var(--c); color: #fff; font-size: 13px; line-height: 1; }
+.cond-score.big { width: 62px; height: 62px; border-width: 3px; }
+.cond-score.big b { font-size: 22px; }
+.cond-score.big span { font-size: 9px; margin-top: 3px; color: var(--c); text-transform: uppercase; letter-spacing: .04em; }
+.cond-hours { display: flex; gap: 2px; padding: 4px 14px 10px; overflow-x: auto; scrollbar-width: none; }
+.cond-hours::-webkit-scrollbar { display: none; }
+.cond-hour { flex: 1 0 22px; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.cond-hour span { font-size: 10px; color: var(--faint); white-space: nowrap; }
+.cond-bar { width: 100%; height: 34px; border-radius: 4px; background: #33476b; display: flex; flex-direction: column; justify-content: flex-start; overflow: hidden; }
+.cond-hour.dark .cond-bar { background: #142446; }
+.cond-bar div { background: #9aa3b2; opacity: .85; }
+.cond-week { display: flex; justify-content: space-between; padding: 10px 10px 12px; border-top: 1px solid var(--line); }
+.cond-day { display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 4px 2px; border-radius: 10px; min-width: 40px; }
+.cond-day.on { background: rgba(255,255,255,.08); }
+.cond-day .caption { font-size: 11px; }
+.bell { flex: none; display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; margin: -6px -8px -6px 0; color: var(--faint); }
+.bell .i { width: 22px; height: 22px; fill: currentColor; }
+.bell.on { color: var(--accent); }
+.dock-mid { display: flex; align-items: center; gap: 6px; }
+.dock-mid > * { position: static; }
+/* AR: the native camera preview shows through a transparent page and canvas. */
+html:has(body.ar), body.ar { background: transparent; }
+.ar[aria-pressed="true"] { color: var(--accent); }
+#sun-warning { position: fixed; left: 16px; right: 16px; top: calc(var(--top) + 58px); z-index: 20; padding: 12px 14px; border-radius: 12px;
+  background: rgba(190, 40, 30, .92); color: #fff; font-size: 15px; font-weight: 600; text-align: center; pointer-events: none; }
+#path-layer { position: fixed; inset: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 5; }
+#path-layer polyline { fill: none; stroke: #ffd36b; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; opacity: .85; }
+#path-layer polyline.down { stroke-dasharray: 3 5; opacity: .35; }
+#path-layer circle { fill: #ffd36b; }
+#path-layer text { fill: #ffe7a8; font-size: 11px; font-family: inherit; paint-order: stroke; stroke: rgba(0,0,0,.6); stroke-width: 3px; }

@@ -57,6 +57,10 @@ export interface Settings {
   manualLocation: { lat: number; lon: number; alt: number; name: string } | null;
   favourites: Favourite[];
   oculars: Ocular[];
+  /** Automatic notifications: visible ISS passes, and the big sky events. */
+  alerts: { iss: boolean; events: boolean };
+  /** Reminders the user set by hand (bell buttons), by key. */
+  reminders: Record<string, { at: number; title: string }>;
   /** Telescope control: host:port of a Stellarium/LX200 TCP server. */
   telescope: { protocol: "stellarium" | "lx200"; host: string; port: number } | null;
 }
@@ -90,6 +94,8 @@ export const DEFAULTS: Settings = {
       scopeFocal: 0, scopeAperture: 50, epFocal: 0, epAfov: 0, sensorW: 0, sensorH: 0, binoFov: 6.5, binoMag: 10,
     },
   ],
+  alerts: { iss: false, events: false },
+  reminders: {},
   telescope: null,
 };
 
@@ -99,7 +105,7 @@ function load(): Settings {
   try {
     const raw = JSON.parse(localStorage.getItem(KEY) ?? "null");
     if (raw && typeof raw === "object") {
-      const s = { ...structuredClone(DEFAULTS), ...raw, labels: { ...DEFAULTS.labels, ...(raw.labels ?? {}) } };
+      const s = { ...structuredClone(DEFAULTS), ...raw, labels: { ...DEFAULTS.labels, ...(raw.labels ?? {}) }, alerts: { ...DEFAULTS.alerts, ...(raw.alerts ?? {}) } };
       // Older builds stored favourites as plain names.
       s.favourites = (s.favourites ?? []).filter((f: unknown) => f && typeof f === "object");
       return s;
@@ -140,7 +146,9 @@ export function applySettings() {
   // scales both so "brighter" also means "bigger".
   core.star_linear_scale = 0.8 * s.starBrightness;
   core.star_relative_scale = 1.1 * Math.sqrt(s.starBrightness);
-  core.stars.hints_mag_offset = s.labels.stars;
+  // "Normal" names the first-magnitude stars at the default wide view, as
+  // Stellarium Mobile and Sky Guide do (the engine's 0 names none).
+  core.stars.hints_mag_offset = s.labels.stars + 2;
   core.planets.hints_mag_offset = s.labels.planets;
   core.minor_planets.hints_mag_offset = s.labels.planets;
   core.comets.hints_mag_offset = s.labels.planets;

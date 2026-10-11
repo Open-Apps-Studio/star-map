@@ -14,6 +14,12 @@ export type NativeIn =
   /** What the phone can do (sent once the page is ready). */
   | { type: "caps"; motion: boolean }
   /** Telescope connection state and position (J2000 radians). */
+  /** The camera preview behind the sky started or stopped (AR mode). */
+  | { type: "camera-state"; on: boolean; denied?: boolean }
+  /** The user opened a notification: go to its time and object. */
+  | { type: "notify-open"; data: { mjd?: number; target?: string } }
+  /** Whether the user allowed notifications (answer to notify-schedule). */
+  | { type: "notify-permission"; granted: boolean }
   | { type: "telescope"; status: "off" | "connecting" | "connected" | "error"; message?: string; warning?: string; ra?: number; dec?: number };
 
 export type NativeOut =
@@ -24,7 +30,13 @@ export type NativeOut =
   | { type: "log"; text: string }
   | { type: "telescope-connect"; protocol: "stellarium" | "lx200"; host: string; port: number }
   | { type: "telescope-goto"; ra: number; dec: number }
-  | { type: "telescope-disconnect" };
+  | { type: "telescope-disconnect" }
+  /** Show the camera behind the sky (AR mode). */
+  | { type: "camera"; on: boolean }
+  /** Local notification at `at` (ms since epoch); same id replaces. */
+  | { type: "notify-schedule"; id: string; at: number; title: string; body: string; data: { mjd?: number; target?: string } }
+  /** Cancel one id, or every id starting with `prefix`. */
+  | { type: "notify-cancel"; id?: string; prefix?: string };
 
 const rn = () => (window as any).ReactNativeWebView as { postMessage(s: string): void } | undefined;
 

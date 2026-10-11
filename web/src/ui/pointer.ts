@@ -4,7 +4,8 @@
  * triangle outside it pointing at the object you asked to find. When it's
  * inside the ring the ring lights up, the phone taps and the card opens.
  */
-import { $, app, haptic, toast } from "../state";
+import { onPointingChanged } from "../ar";
+import { $, app, haptic, planet, toast } from "../state";
 import { icon, MDI } from "../icons";
 import { createSensors, type Vec3 } from "../sensors";
 import { azAlt, displayName, type SweObj } from "../engine";
@@ -66,6 +67,7 @@ export async function setPointing(on: boolean) {
     if ((app.core.fov as number) > 100 * D2R) app.stel.zoomTo(70 * D2R, 0.6);
   } else {
     sensors.stop();
+    $("sun-warning").hidden = true;
     app.obs.roll = 0;
     target = null;
   }
@@ -73,6 +75,7 @@ export async function setPointing(on: boolean) {
   $("pointer").hidden = !on;
   $("sensor-btn").setAttribute("aria-pressed", String(on));
   post({ type: "sensor-mode", on });
+  onPointingChanged(on);
   haptic("light");
 }
 
@@ -80,6 +83,7 @@ export async function setPointing(on: boolean) {
 export function updatePointer() {
   if (!app.pointing) return;
   if (!lastView) return;
+  sunWarning();
   $("pointer-alt").textContent = `${Math.round(lastView.pitch * R2D)}°`;
   const pointer = $("pointer");
   const tri = $("pointer-tri") as unknown as SVGElement;
@@ -110,6 +114,23 @@ export function updatePointer() {
   const ang = Math.atan2(-y, x);
   const rad = 0.26 * window.innerWidth + 0.1 * window.innerWidth;
   tri.style.transform = `translate(${Math.cos(ang) * rad}px, ${Math.sin(ang) * rad}px) rotate(${ang * R2D}deg)`;
+}
+
+/** Sun up and within 20° of where the phone points: warn (Night Sky does this too). */
+let sunFrame = 0;
+function sunWarning() {
+  if (sunFrame++ % 10) return; // a few times a second is plenty
+  const sun = planet("Sun");
+  let near = false;
+  if (sun) {
+    const { az, alt } = azAlt(app.stel, sun);
+    if (alt > -1 * D2R) near = Math.acos(Math.max(-1, Math.min(1, dot(enu(az, alt), basis().forward)))) < 20 * D2R;
+  }
+  const w = $("sun-warning");
+  if (w.hidden === near) {
+    w.hidden = !near;
+    if (near) haptic("medium");
+  }
 }
 
 export const guideTarget = () => target;

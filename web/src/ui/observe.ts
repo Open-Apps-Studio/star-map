@@ -15,6 +15,8 @@ import { resolve } from "../catalog";
 import { icon, MDI, objectIcon, planetColor, planetGlyph, planetThumb } from "../icons";
 import { closePages, el, pushPage, refreshPage, section, segmented } from "./page";
 import { updateClock } from "./time";
+import { alertsAvailable, eventKey, eventReminderTime, isReminded, toggleReminder } from "../alerts";
+import { getForecast, hoursBetween, scoreColor, scoreNight, scoreWeek, type Forecast } from "../conditions";
 
 const R2D = 180 / Math.PI;
 const MIN = 1 / 1440;
@@ -136,6 +138,8 @@ async function passesBox(body: HTMLElement, night: Night) {
     const dur = Math.max(1, Math.round((p.set - p.rise) / MIN));
     row.querySelector(".row-sub")!.textContent = `${compass(p.fromAz)} → ${compass(p.toAz)} · up to ${Math.round(p.maxAlt)}° · ${dur} min${p.mag < 10 ? ` · mag ${p.mag.toFixed(1)}` : ""}`;
     row.addEventListener("click", () => jump(p.peak, p.id));
+    bell(row, `pass-${p.id}-${Math.round(p.rise * 1440)}`, p.rise - 5 * MIN, `${p.name} passes over in 5 minutes`,
+      `Look ${compass(p.fromAz, true)} at ${fmtTime(p.rise)}, up to ${Math.round(p.maxAlt)}°.`, { mjd: p.peak, target: p.id });
     box.appendChild(row);
   }
 }
@@ -181,6 +185,85 @@ function highlightsBox(body: HTMLElement, night: Night) {
   }
 }
 
+// ---------------------------------------------------------------- conditions
+const imperial = () => /^en-(US|LR|MM)$/i.test(navigator.language);
+const fmtTemp = (c: number) => (imperial() ? `${Math.round(c * 9 / 5 + 32)}°F` : `${Math.round(c)}°C`);
+const fmtWind = (kmh: number) => (imperial() ? `${Math.round(kmh / 1.609)} mph` : `${Math.round(kmh)} km/h`);
+// +30 s: hourly MJDs come back a hair under the hour from the float maths.
+const fmtHour = (mjd: number) => mjdToDate(mjd + 1 / 2880).toLocaleTimeString([], { hour: "numeric" }).replace(/\s?([AP])M$/i, (_, a) => a.toLowerCase());
+
+/** Bell at the end of a row: toggles a reminder without triggering the row. */
+function bell(row: HTMLElement, key: string, at: number, title: string, body: string, data: { mjd?: number; target?: string }) {
+  if (!alertsAvailable() || at * 86400e3 - 40587 * 86400e3 < Date.now()) return;
+  const b = el("span", "bell" + (isReminded(key) ? " on" : ""));
+  b.setAttribute("role", "button");
+  b.setAttribute("aria-label", "Remind me");
+  const paint = () => (b.innerHTML = icon(isReminded(key) ? MDI.mdiBellRing : MDI.mdiBellOutline));
+  paint();
+  b.addEventListener("click", (e) => {
+    e.stopPropagation();
+    b.classList.toggle("on", toggleReminder(key, at, title, body, data));
+    haptic("selection");
+    paint();
+  });
+  row.appendChild(b);
+}
+
+function scoreBadge(score: number | null, label: string, big = false) {
+  return `<span class="cond-score${big ? " big" : ""}" style="--c:${scoreColor(score)}"><b>${score ?? "–"}</b>${big ? `<span>${label}</span>` : ""}</span>`;
+}
+
+/** Tonight's sky conditions: score, summary, hourly clouds, and the week ahead. */
+function conditionsBox(body: HTMLElement, night: Night) {
+  const box = section(body, "Conditions", "Forecast from Open-Meteo. The score weighs clouds, the Moon, damp air and how long it's dark.");
+  box.classList.add("cond");
+  box.innerHTML = `<div class="row"><span class="row-sub">Checking the forecast…</span></div>`;
+  const nightMjd = app.obs.utc + nightOffset;
+  getForecast().then((f) => {
+    if (!box.isConnected) return;
+    const s = scoreNight(f, nightMjd);
+    if (!f || s.score == null) {
+      box.innerHTML = `<div class="row"><span class="row-sub">${f ? "The forecast doesn't reach this night yet." : "No forecast offline. Connect to see clouds and the stargazing score."}</span></div>`;
+      if (!f) return;
+    } else {
+      const hours = hoursBetween(f, night.sunset, night.sunrise);
+      const mid = hoursBetween(f, s.night.dark ?? night.sunset, s.night.dawn ?? night.sunrise);
+      const avg = (k: "temp" | "humidity" | "wind") => mid.reduce((a, h) => a + h[k], 0) / Math.max(1, mid.length);
+      const top = el("div", "cond-top");
+      top.innerHTML = `${scoreBadge(s.score, s.label, true)}<span class="row-text"><span class="row-label"></span><span class="row-sub"></span></span>`;
+      top.querySelector(".row-label")!.textContent = s.summary[0].toUpperCase() + s.summary.slice(1);
+      top.querySelector(".row-sub")!.textContent = `${Math.round(s.cloud ?? 0)}% cloud · ${fmtTemp(avg("temp"))} · humidity ${Math.round(avg("humidity"))}% · wind ${fmtWind(avg("wind"))}`;
+      box.innerHTML = "";
+      box.appendChild(top);
+      // Hourly cloud strip: sky colour where clear, grey where cloudy.
+      const strip = el("div", "cond-hours");
+      for (const h of hours) {
+        const dark = (s.night.dark == null || h.t >= s.night.dark - 1 / 48) && (s.night.dawn == null || h.t <= s.night.dawn + 1 / 48);
+        const cell = el("div", "cond-hour" + (dark ? " dark" : ""));
+        cell.innerHTML = `<div class="cond-bar"><div style="height:${Math.round(h.cloud)}%"></div></div><span>${fmtHour(h.t)}</span>`;
+        cell.title = `${Math.round(h.cloud)}% cloud`;
+        strip.appendChild(cell);
+      }
+      box.appendChild(strip);
+    }
+    // The week ahead: tap a night to open it.
+    const week = el("div", "cond-week");
+    const today = nightOf(app.obs.utc);
+    for (const [i, w] of scoreWeek(f, app.obs.utc, 7).entries()) {
+      const b = el("button", "cond-day" + (i === nightOffset ? " on" : ""));
+      b.innerHTML = `<span class="caption"></span>${scoreBadge(w.score, w.label)}`;
+      b.querySelector(".caption")!.textContent = i === 0 ? "Tonight" : mjdToDate(today.sunset + i).toLocaleDateString([], { weekday: "short" });
+      b.addEventListener("click", () => {
+        nightOffset = i;
+        haptic("selection");
+        refreshPage();
+      });
+      week.appendChild(b);
+    }
+    box.appendChild(week);
+  });
+}
+
 function tonight(body: HTMLElement) {
   const night = nightOf(app.obs.utc + nightOffset);
   const head = el("div", "tn-head");
@@ -193,6 +276,7 @@ function tonight(body: HTMLElement) {
   const sun = el("div", "tn-sun four");
   sun.innerHTML = timeCell("Sunset", night.sunset) + timeCell("Dark", night.dark) + timeCell("Dawn", night.dawn) + timeCell("Sunrise", night.sunrise);
   body.appendChild(sun);
+  conditionsBox(body, night);
   moonBox(body, night);
   body.appendChild(el("h3", "", "Planets"));
   planetBars(body, night);
@@ -262,6 +346,7 @@ async function calendar(body: HTMLElement) {
     row.querySelector(".row-label")!.textContent = ev.title;
     row.querySelector(".row-sub")!.textContent = ev.detail;
     row.addEventListener("click", () => jump(ev.mjd, ev.target));
+    bell(row, eventKey(ev), eventReminderTime(ev), ev.title, ev.detail, { mjd: ev.mjd, target: ev.target });
     box!.appendChild(row);
   }
   if (!calendarCache.events.length) list.innerHTML = `<p class="caption">No events found.</p>`;

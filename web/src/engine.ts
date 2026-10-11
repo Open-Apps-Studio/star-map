@@ -4,6 +4,7 @@
  *
  * Angles in the engine are radians. Time is MJD (UTC).
  */
+import { satelliteSource } from "./satellites";
 
 /** A sky object handle returned by the engine (star, planet, DSO, constellation…). */
 export interface SweObj {
@@ -82,7 +83,11 @@ export function bootEngine(canvas: HTMLCanvasElement): Promise<Stel> {
         for (const p of ["mercury", "venus", "mars", "jupiter", "saturn", "uranus", "neptune"]) {
           core.planets.addDataSource({ url: sky("planets/" + p), key: p });
         }
-        core.satellites.addDataSource({ url: sky("tle_satellite.jsonl.gz"), key: "jsonl/sat" });
+        // Satellites: today's orbits from CelesTrak when online (see satellites.ts).
+        satelliteSource(sky("tle_satellite.jsonl.gz")).then((s) => {
+          core.satellites.addDataSource({ url: s.url, key: "jsonl/sat" });
+          console.info(`satellites: ${s.fresh ? "fresh" : "stale"} (${s.ageHours == null ? "bundled" : s.ageHours.toFixed(1) + " h old"})`);
+        });
         // The engine's built-in Noto Sans fonts are used. (An external TTF via
         // setFont used to crash: emscripten 6 defaults to a 64 KB stack; the
         // build now sets STACK_SIZE=5MB.)

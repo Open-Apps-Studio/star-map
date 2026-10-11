@@ -43,6 +43,20 @@
           "locationWhenInUsePermission": "Star Map uses your location to show the sky exactly as it looks where you are."
         }
       ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Star Map shows your camera behind the sky, so stars and planets are labelled over the real view.",
+          "microphonePermission": false,
+          "recordAudioAndroid": false
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "enableBackgroundRemoteNotifications": false
+        }
+      ],
       "./plugins/with-sky-bundle.js",
       "./plugins/with-scene-lifecycle.js"
     ],

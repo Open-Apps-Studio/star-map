@@ -29,10 +29,18 @@
     <!-- Where the connected telescope points. -->
     <div id="scope-marker" hidden><svg viewBox="-20 -20 40 40"><circle r="12"/><path d="M-19 0h-0M0-19v0M-18 0h-8M18 0h8M0-18v-8M0 18v8" /></svg></div>
 
+    <!-- Tonight's track of the selected object (ui/path.ts). -->
+    <svg id="path-layer" aria-hidden="true" hidden></svg>
+
+    <div id="sun-warning" role="alert" hidden>Never look at the Sun, even through binoculars or a telescope.</div>
+
     <div id="dock">
       <div class="dock-row">
         <button id="layers-btn" class="sky-icon big" aria-label="Layers"></button>
-        <button id="sensor-btn" class="sky-icon sensor" aria-label="Point at the sky" aria-pressed="false"></button>
+        <div class="dock-mid">
+          <button id="sensor-btn" class="sky-icon sensor" aria-label="Point at the sky" aria-pressed="false"></button>
+          <button id="ar-btn" class="sky-icon sensor ar" aria-label="Camera view" aria-pressed="false" hidden></button>
+        </div>
         <button id="time-btn" class="time-btn" aria-label="Date and time">
           <span id="now-badge" class="now-badge" hidden></span>
           <span id="time-label">--:--</span>
