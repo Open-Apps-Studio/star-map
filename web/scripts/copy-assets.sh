@@ -6,6 +6,11 @@ E=../engine
 mkdir -p public/engine public/skydata public/fonts
 cp $E/build/stellarium-web-engine.js public/engine/   # wasm is embedded (SINGLE_FILE)
 rsync -a --delete $E/apps/test-skydata/ public/skydata/
+# Stellarium Mobile's offline packs replace the small test catalogues:
+# stars to mag 8, bright DSOs, all sky cultures, landscapes, 20k asteroids
+# (mirrored by scripts/fetch-skydata.py into ../data/skydata).
+rm -rf public/skydata/stars public/skydata/dso public/skydata/skycultures public/skydata/landscapes
+rsync -a ../data/skydata/ public/skydata/
 # Fresh satellite orbits (the bundled ones are from 2020). Offline? Keep old.
 python3 ./scripts/update-satellites.py $E/apps/test-skydata/tle_satellite.jsonl.gz public/skydata/tle_satellite.jsonl.gz \
   || echo "satellite refresh skipped"
@@ -16,3 +21,6 @@ curl -sf --max-time 20 -o public/skydata/CometEls.txt.new https://www.minorplane
 cp ../engine/apps/simple-html/static/fonts/Roboto-*.ttf public/fonts/ 2>/dev/null || true
 # Planet surface textures (HiPS order 0, generated from CC BY 4.0 maps).
 rsync -a ../data/planets/ public/skydata/planets/
+# Offline search index over every bundled star, DSO, asteroid, comet and
+# satellite (after the comet/satellite refresh above).
+uv run -q --with zstandard --with numpy python ./scripts/build-search-index.py public/skydata public/skydata/search-index.json

@@ -77,6 +77,13 @@ int eph_read_tile_header(const void *data, int data_size, int *data_ofs,
     return 0;
 }
 
+// Star Map: zstd decoder (ext_src/zstd/zstddeclib.c). Newer Stellarium sky
+// data (Gaia DR3, the Stellarium Mobile star and DSO packs) is compressed
+// with zstd instead of zlib.
+size_t ZSTD_decompress(void *dst, size_t dstCapacity,
+                       const void *src, size_t compressedSize);
+unsigned ZSTD_isError(size_t code);
+
 void *eph_read_compressed_block(const void *data, int data_size,
                                 int *data_ofs, int *size)
 {
@@ -89,6 +96,16 @@ void *eph_read_compressed_block(const void *data, int data_size,
     lsize = *size;
     ret = malloc(lsize);
     *data_ofs += 8 + comp_size;
+    // zstd frames start with the magic number 0xFD2FB528.
+    if (comp_size >= 4 && memcmp(data + 8, "\x28\xb5\x2f\xfd", 4) == 0) {
+        size_t r = ZSTD_decompress(ret, lsize, data + 8, comp_size);
+        if (ZSTD_isError(r) || r != lsize) {
+            LOG_E("Cannot uncompress zstd data");
+            free(ret);
+            return NULL;
+        }
+        return ret;
+    }
     if (uncompress(ret, &lsize, data + 8, comp_size) != Z_OK) {
         LOG_E("Cannot uncompress data");
         free(ret);
@@ -148,6 +165,35 @@ void eph_shuffle_bytes(uint8_t *data, int nb, int size)
     free(buf);
 }
 
+/*
+ * Star Map: layout of the last table header read, for eph_unshuffle_table.
+ * Newer files (flags & 4) store each numeric column byte-transposed across
+ * rows (same as eph_shuffle_bytes) but keep string columns row by row, so
+ * unshuffling needs every column's type and extent, not just the ones a
+ * module reads.
+ */
+static struct { char type; int start; int size; } g_last_cols[64];
+static int g_last_ncols;
+
+void eph_unshuffle_table(uint8_t *data, int nb, int row_size)
+{
+    int c, r, k, start, size;
+    uint8_t *buf = malloc((size_t)nb * row_size);
+    memcpy(buf, data, (size_t)nb * row_size);
+    for (c = 0; c < g_last_ncols; c++) {
+        start = g_last_cols[c].start;
+        size = g_last_cols[c].size;
+        for (r = 0; r < nb; r++) {
+            for (k = 0; k < size; k++) {
+                data[r * row_size + start + k] = g_last_cols[c].type == 's' ?
+                    buf[start * nb + r * size + k] :
+                    buf[(start + k) * nb + r];
+            }
+        }
+    }
+    free(buf);
+}
+
 int eph_read_table_header(int version, const void *data, int data_size,
                           int *data_ofs, int *row_size, int *flags,
                           int nb_columns, eph_table_column_t *columns)
@@ -162,9 +208,16 @@ int eph_read_table_header(int version, const void *data, int data_size,
     memcpy(&n_col,    data + 8 , 4);
     memcpy(&n_row,    data + 12, 4);
 
+    g_last_ncols = 0;
     for (i = 0; i < n_col; i++) {
         memcpy(name, data + 16 + i * 20, 4);
         memcpy(type, data + 20 + i * 20, 4);
+        if (g_last_ncols < (int)(sizeof(g_last_cols) / sizeof(g_last_cols[0]))) {
+            g_last_cols[g_last_ncols].type = type[0];
+            memcpy(&g_last_cols[g_last_ncols].start, data + 28 + i * 20, 4);
+            memcpy(&g_last_cols[g_last_ncols].size, data + 32 + i * 20, 4);
+            g_last_ncols++;
+        }
         for (j = 0; j < nb_columns; j++) {
             if (strncmp(columns[j].name, name, 4) == 0) break;
         }

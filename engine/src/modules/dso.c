@@ -291,6 +291,8 @@ static int on_file_tile_loaded(const char type[4],
     data_ofs = 0;
     if (flags & 1) {
         eph_shuffle_bytes(tile_data + data_ofs, row_size, nb);
+    } else if (flags & 4) {
+        eph_unshuffle_table(tile_data, nb, row_size);
     }
 
     tile = calloc(1, sizeof(*tile));

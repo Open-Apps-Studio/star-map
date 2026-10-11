@@ -36,6 +36,9 @@ void *eph_read_compressed_block(const void *data, int data_size,
 
 void eph_shuffle_bytes(uint8_t *data, int nb, int size);
 
+// Star Map: undo the column-wise shuffle of tables with flags & 4.
+void eph_unshuffle_table(uint8_t *data, int nb, int row_size);
+
 /*
  * Enum: EPH_UNIT
  * Represent the different unit we can use for eph file data.

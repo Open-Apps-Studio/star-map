@@ -4,7 +4,9 @@
  * pointing mode, menu). Each piece lives in ./ui.
  */
 import "./style.css";
-import { abs, azAlt, bootEngine, D2R, knownNames, type SweObj } from "./engine";
+import { abs, addOnlineSources, azAlt, probeCdn, bootEngine, D2R, knownNames, type SweObj } from "./engine";
+import { applySettings, settings } from "./settings";
+import { initLocation, onFix } from "./location";
 import { buildCatalog, isResolved, resolve } from "./catalog";
 import { dateToMjd } from "./astro";
 import { inApp, listen, post } from "./bridge";
@@ -15,37 +17,6 @@ import { initCard, onUnlock, showCard, updateFacts } from "./ui/card";
 import { initPointer, sensors, updatePointer } from "./ui/pointer";
 import { initSearch } from "./ui/search";
 import { initMenu } from "./ui/menu";
-
-// ---------------------------------------------------------------- location
-const FALLBACK = { lat: 41.0082, lon: 28.9784, alt: 40 }; // Istanbul
-
-function setLocation(lat: number, lon: number, alt = 0) {
-  app.obs.latitude = lat * D2R;
-  app.obs.longitude = lon * D2R;
-  app.obs.elevation = alt;
-  try {
-    localStorage.setItem("loc", JSON.stringify({ lat, lon, alt }));
-  } catch {
-    /* private mode */
-  }
-}
-
-function initLocation() {
-  let saved = FALLBACK;
-  try {
-    saved = JSON.parse(localStorage.getItem("loc") ?? "null") ?? FALLBACK;
-  } catch {
-    /* ignore */
-  }
-  setLocation(saved.lat, saved.lon, saved.alt);
-  if (!inApp() && "geolocation" in navigator) {
-    navigator.geolocation.getCurrentPosition(
-      (p) => setLocation(p.coords.latitude, p.coords.longitude, p.coords.altitude ?? 0),
-      () => {},
-      { timeout: 10000, maximumAge: 3600_000 },
-    );
-  }
-}
 
 // ---------------------------------------------------------------- first view
 /** Open facing the brightest planet that's up (else south), horizon low. */
@@ -136,6 +107,28 @@ function resumeView(): boolean {
   return true;
 }
 
+// ---------------------------------------------------------------- start time
+/** Startup time control: "now", or the time you were looking at last. */
+function initStartTime() {
+  const KEY = "lastUtc";
+  if (settings.startTime === "last") {
+    try {
+      const last = Number(localStorage.getItem(KEY));
+      if (last > 0) app.obs.utc = last;
+    } catch {
+      /* ignore */
+    }
+  }
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState !== "hidden") return;
+    try {
+      localStorage.setItem(KEY, String(app.obs.utc));
+    } catch {
+      /* ignore */
+    }
+  });
+}
+
 // ---------------------------------------------------------------- frame loop
 let lastSlow = 0;
 function frame(t: number) {
@@ -170,6 +163,18 @@ async function main() {
   app.obs.utc = dateToMjd(new Date());
   initLocation();
 
+  applySettings();
+  // Deep catalogues stream from Stellarium's CDN once online.
+  const goOnline = async () => {
+    if (!settings.onlineData) return;
+    const status = await probeCdn();
+    post({ type: "log", text: `sky data CDN: ${status || "unreachable"}` });
+    if (status === 200) addOnlineSources(app.stel);
+  };
+  goOnline();
+  window.addEventListener("online", goOnline);
+  initStartTime();
+
   initLayers();
   initTime();
   initCard();
@@ -189,7 +194,7 @@ async function main() {
 
   listen((msg) => {
     if (msg.type === "motion") sensors.pushNativeMatrix(msg.m);
-    if (msg.type === "location") setLocation(msg.lat, msg.lon, msg.alt ?? 0);
+    if (msg.type === "location") onFix(msg.lat, msg.lon, msg.alt ?? 0);
     if (msg.type === "calibrate") toast("Compass needs calibrating: wave your phone in a figure-8");
     if (msg.type === "north" && msg.magnetic) toast("Allow location for accurate north");
     if (msg.type === "caps") app.motion = msg.motion;

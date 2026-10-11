@@ -110,7 +110,7 @@ const DEEP_SKY: [string, string, string[]?, string?][] = [
  * XHR rather than fetch: inside the iOS app the page runs from file://, where
  * WKWebView allows XHR (with file access enabled) but blocks fetch().
  */
-function getJson(url: string): Promise<any> {
+export function getJson(url: string): Promise<any> {
   return new Promise((resolve, reject) => {
     const x = new XMLHttpRequest();
     x.open("GET", url);
@@ -199,12 +199,7 @@ export function resolve(stel: Stel, e: Entry): SweObj | null {
   for (const id of e.ids) {
     try {
       const hip = /^HIP (\d+)$/.exec(id);
-      // Constellations are direct children of the module (no full scan).
-      const o = hip
-        ? starByHip(stel, Number(hip[1]))
-        : id.startsWith("CON ")
-          ? (((stel.core as any).constellations[id] as SweObj | undefined) ?? null)
-          : stel.getObj(id);
+      const o = hip ? starByHip(stel, Number(hip[1])) : stel.getObj(id);
       if (o) {
         resolved.set(e, o);
         return o;

@@ -448,6 +448,21 @@ static int star_data_cmp(const void *a, const void *b)
     return cmp(((const star_t*)a)->vmag, ((const star_t*)b)->vmag);
 }
 
+/*
+ * Star Map: B-V colour index from an effective temperature, inverting
+ * Ballesteros' formula T = 4600 (1/(0.92 bv + 1.7) + 1/(0.92 bv + 0.62)).
+ * Newer star data ships teff instead of bv.
+ */
+static double teff_to_bv(double teff)
+{
+    double t = teff / 4600.0, a, b, c, x;
+    a = t;
+    b = 2.32 * t - 2.0;
+    c = 1.054 * t - 2.32;
+    x = (-b + sqrt(fmax(0.0, b * b - 4 * a * c))) / (2 * a);
+    return x / 0.92;
+}
+
 static int on_file_tile_loaded(const char type[4],
                                const void *data, int size,
                                const json_value *json,
@@ -455,7 +470,7 @@ static int on_file_tile_loaded(const char type[4],
 {
     int version, nb, data_ofs = 0, row_size, flags, i, j, order, pix;
     int children_mask;
-    double vmag, gmag, ra, de, pra, pde, plx, bv, epoch;
+    double vmag, gmag, ra, de, pra, pde, plx, bv, epoch, dist, teff;
     char ids[256] = {};
     char sp_type[32] = {};
     survey_t *survey = USER_GET(user, 0);
@@ -481,7 +496,12 @@ static int on_file_tile_loaded(const char type[4],
         {"bv",   'f'},
         {"ids",  's', .size=256},
         {"spec", 's', .size=32},
+        // Star Map: newer data has distance (light-years) and teff instead
+        // of plx and bv.
+        {"dist", 'f'},
+        {"teff", 'f'},
     };
+    const int COL_PLX = 7, COL_BV = 11;
 
     *out = NULL;
     // Only support STAR and GAIA chunks.  Ignore anything else.
@@ -505,6 +525,7 @@ static int on_file_tile_loaded(const char type[4],
     }
     data_ofs = 0;
     if (flags & 1) eph_shuffle_bytes(table_data, row_size, nb);
+    else if (flags & 4) eph_unshuffle_table(table_data, nb, row_size);
 
     tile = calloc(1, sizeof(*tile));
     tile->sources = calloc(nb, sizeof(*tile->sources));
@@ -518,7 +539,12 @@ static int on_file_tile_loaded(const char type[4],
         eph_read_table_row(
                 table_data, size, &data_ofs, ARRAY_SIZE(columns), columns,
                 s->obj.type, &s->gaia, &s->hip, &vmag, &gmag,
-                &ra, &de, &plx, &pra, &pde, &epoch, &bv, ids, sp_type);
+                &ra, &de, &plx, &pra, &pde, &epoch, &bv, ids, sp_type,
+                &dist, &teff);
+        if (!columns[COL_PLX].got && dist > 0 && !isnan(dist))
+            plx = 3.26156 / dist; // light-years -> parallax in arcsec.
+        if (!columns[COL_BV].got)
+            bv = (teff > 0 && !isnan(teff)) ? teff_to_bv(teff) : NAN;
         assert(!isnan(ra));
         assert(!isnan(de));
         if (isnan(vmag)) vmag = gmag;

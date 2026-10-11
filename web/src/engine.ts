@@ -68,10 +68,10 @@ export function bootEngine(canvas: HTMLCanvasElement): Promise<Stel> {
       onReady: (stel) => {
         const core = stel.core;
         const sky = (p: string) => abs("skydata/" + p);
-        core.stars.addDataSource({ url: sky("stars") });
-        core.skycultures.addDataSource({ url: sky("skycultures/western"), key: "western" });
-        core.dsos.addDataSource({ url: sky("dso") });
-        core.landscapes.addDataSource({ url: sky("landscapes/guereins"), key: "guereins" });
+        // Offline packs (Stellarium Mobile's own): stars to mag 8, bright DSOs.
+        core.stars.addDataSource({ url: sky("stars/minimal"), key: "minimal" });
+        core.stars.addDataSource({ url: sky("stars/base"), key: "base" });
+        core.dsos.addDataSource({ url: sky("dsos/base"), key: "base" });
         core.milkyway.addDataSource({ url: sky("surveys/milkyway") });
         core.minor_planets.addDataSource({ url: sky("mpcorb.dat"), key: "mpc_asteroids" });
         core.planets.addDataSource({ url: sky("surveys/sso/moon"), key: "moon" });
@@ -103,6 +103,77 @@ export function bootEngine(canvas: HTMLCanvasElement): Promise<Stel> {
       },
     });
   });
+}
+
+// ---------------------------------------------------------------- sky data
+/** Stellarium's public data CDN (what stellarium-web.org streams from). */
+const CDN = "https://stellarium.sfo2.cdn.digitaloceanspaces.com";
+const LIBSWE = CDN + "/stellarium-web/libswe-1.17.0";
+
+/**
+ * Can we read the CDN? navigator.onLine is often wrong, and inside the app
+ * this also proves the WebView may read cross-origin data. Resolves to the
+ * HTTP status (0 = unreachable).
+ */
+export function probeCdn(): Promise<number> {
+  return new Promise((resolve) => {
+    const x = new XMLHttpRequest();
+    x.open("GET", CDN + "/surveys/gaia/v3/properties");
+    x.timeout = 8000;
+    x.onload = () => resolve(x.status);
+    x.onerror = x.ontimeout = () => resolve(0);
+    x.send();
+  });
+}
+
+let onlineAdded = false;
+/**
+ * Deep catalogues, streamed and HTTP-cached once online: stars to mag 12
+ * (Stellarium Mobile's extended pack) then Gaia DR3 to mag ~20, the extended
+ * DSO catalogue, DSS colour photos of the whole sky, and sharper Moon and
+ * planet surfaces. The app's WebView loads the page from file:// with
+ * universal access, which is what lets it read the CDN.
+ */
+export function addOnlineSources(stel: Stel) {
+  if (onlineAdded) return;
+  onlineAdded = true;
+  const core = stel.core;
+  core.stars.addDataSource({ url: LIBSWE + "/asset_pack_extended/stars", key: "extended" });
+  core.stars.addDataSource({ url: CDN + "/surveys/gaia/v3", key: "gaia" });
+  core.dsos.addDataSource({ url: LIBSWE + "/asset_pack_extended/dso", key: "extended" });
+  core.dss.addDataSource({ url: CDN + "/surveys/dss/v1" });
+  core.planets.addDataSource({ url: CDN + "/surveys/sso/moon/v1", key: "moon" });
+}
+
+const requested = { skycultures: new Set<string>(), landscapes: new Set<string>() };
+
+/**
+ * Switch to a bundled module child (sky culture / landscape), adding its data
+ * source the first time and waiting for it to load before selecting it.
+ */
+function loadChild(module: "skycultures" | "landscapes", id: string, url: string) {
+  const mod = (globalThis as any).stel?.core?.[module];
+  if (!mod || mod.current_id === id) return;
+  if (!requested[module].has(id)) {
+    requested[module].add(id);
+    mod.addDataSource({ url, key: id });
+  }
+  // The engine ignores current_id until the data has loaded, so keep
+  // asking until it sticks (or give up after ~10 s, e.g. a missing folder).
+  let tries = 0;
+  const pick = () => {
+    mod.current_id = id;
+    if (mod.current_id !== id && ++tries < 100) setTimeout(pick, 100);
+  };
+  pick();
+}
+
+export function loadSkyCulture(id: string) {
+  loadChild("skycultures", id, abs("skydata/skycultures/" + id));
+}
+
+export function loadLandscape(id: string) {
+  loadChild("landscapes", id, abs("skydata/landscapes/" + id));
 }
 
 /** Azimuth/altitude (radians) of an object for the current observer. Az: N=0, E=+π/2. */
@@ -162,7 +233,7 @@ const GREEK: Record<string, string> = {
   nu: "ν", xi: "ξ", omi: "ο", pi: "π", rho: "ρ", sig: "σ", tau: "τ", ups: "υ", phi: "φ", chi: "χ", psi: "ψ", ome: "ω",
 };
 /** "* alf01 Cru" → "α¹ Cru", "* 61 Cyg" → "61 Cyg". */
-function prettyDesignation(d: string): string {
+export function prettyDesignation(d: string): string {
   return d.replace(/^\* /, "").replace(/^([a-z]{2,3})(\d{0,2})(?= )/, (_m, g: string, n: string) => {
     const sup = n ? String(Number(n)).replace(/\d/g, (c) => "⁰¹²³⁴⁵⁶⁷⁸⁹"[Number(c)]) : "";
     return (GREEK[g] ?? g) + sup;
