@@ -294,8 +294,12 @@ export async function open3D(obj: SweObj) {
     controls.update();
     renderer.render(scene, camera);
     for (const l of labels) {
+      // Hidden behind the globe? (farther than it and inside its disc)
+      const toMoon = l.obj.position.clone().sub(camera.position);
+      const toGlobe = camera.position.clone().multiplyScalar(-1);
+      const behind = toMoon.length() > toGlobe.length() && toMoon.angleTo(toGlobe) < Math.asin(Math.min(1, 1 / toGlobe.length()));
       tmp.copy(l.obj.position).project(camera);
-      const visible = tmp.z < 1 && Math.abs(tmp.x) < 1.1 && Math.abs(tmp.y) < 1.1;
+      const visible = !behind && tmp.z < 1 && Math.abs(tmp.x) < 1.1 && Math.abs(tmp.y) < 1.1;
       l.el.style.display = visible ? "block" : "none";
       if (visible) l.el.style.transform = `translate(${((tmp.x + 1) / 2) * window.innerWidth}px, ${((1 - tmp.y) / 2) * window.innerHeight}px)`;
     }

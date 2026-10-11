@@ -236,7 +236,7 @@ body.panel-open .dock-row { visibility: hidden; }
 button.tn-row { width: 100%; text-align: left; }
 .pass-time { flex: none; width: 66px; white-space: nowrap; font-variant-numeric: tabular-nums; color: var(--accent); font-size: 15px; }
 .cal-row { align-items: flex-start; }
-.cal-date { flex: none; width: 44px; display: flex; flex-direction: column; align-items: center; line-height: 1.15; }
+.cal-date { flex: none; width: 58px; white-space: nowrap; display: flex; flex-direction: column; align-items: center; line-height: 1.15; }
 .cal-date b { font-size: 20px; }
 .cal-date span { font-size: 11px; color: var(--muted); }
 .cal-ic { flex: none; color: var(--accent); padding-top: 2px; }

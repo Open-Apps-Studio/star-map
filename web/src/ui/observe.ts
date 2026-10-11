@@ -120,7 +120,9 @@ async function passesBox(body: HTMLElement, night: Night) {
   const stations = sats.filter((h) => /^(ISS|CSS \(TIANHE\)|HST)$/.test(h.name));
   const bright = sats.filter((h) => typeof h.mag === "number" && !stations.includes(h)).sort((a, b) => (a.mag as number) - (b.mag as number)).slice(0, 25);
   const list = [...stations, ...bright].map((h) => ({ id: h.ids[0], name: h.name === "ISS" ? "International Space Station" : h.name }));
-  const passes = satellitePasses(night, list, 17);
+  // Stations at any brightness; everything else only when easy to see.
+  const stationIds = new Set(stations.map((h) => h.ids[0]));
+  const passes = satellitePasses(night, list, 17).filter((p) => stationIds.has(p.id) || p.mag <= 4).slice(0, 15);
   box.innerHTML = "";
   if (!passes.length) {
     box.innerHTML = `<div class="row"><span class="row-sub">No bright passes tonight.</span></div>`;
