@@ -320,6 +320,34 @@ export function nightOf(mjd: number): Night {
   });
 }
 
+/**
+ * Passes of one satellite above 10° from `start` for `days`; `visible` when
+ * it's sunlit against a dark sky at some point. Samples every 20 s.
+ */
+export function nextPasses(sat: SweObj, start: number, days: number, max = 3) {
+  const sun = planet("Sun")!;
+  const out: { rise: number; set: number; maxAlt: number; visible: boolean }[] = [];
+  withObserverCopy(app.stel, (o) => {
+    let cur: (typeof out)[number] | null = null;
+    for (let t = start; t <= start + days && out.length < max; t += 20 / 86400) {
+      o.utc = t;
+      const v = app.stel.convertFrame(o, "ICRF", "OBSERVED", sat.getInfo("radec", o));
+      const alt = app.stel.anpm(app.stel.c2s(v)[1]) * R2D;
+      if (alt > 10) {
+        cur ??= { rise: t, set: t, maxAlt: alt, visible: false };
+        cur.set = t;
+        cur.maxAlt = Math.max(cur.maxAlt, alt);
+        if (!cur.visible && (sat.getInfo("vmag", o) as number) < 17 && altitudeFor(app.stel, sun, o) * R2D < -6) cur.visible = true;
+      } else if (cur) {
+        out.push(cur);
+        cur = null;
+      }
+    }
+    if (cur && out.length < max) out.push(cur);
+  });
+  return out;
+}
+
 export interface Pass {
   name: string;
   id: string;

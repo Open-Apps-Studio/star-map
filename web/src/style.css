@@ -163,7 +163,7 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 26px;
 .drawer-item { display: flex; align-items: center; gap: 22px; width: 100%; padding: 14px 20px; font-size: 16px; text-align: left; }
 .drawer-item .ic { color: var(--muted); }
 .page-head { display: flex; align-items: center; gap: 16px; padding: 10px 14px; font-size: 18px; font-weight: 700; }
-.page-body { flex: 1; overflow-y: auto; padding: 0 16px calc(var(--bottom) + 20px); touch-action: pan-y; font-size: 15px; line-height: 1.5; color: rgba(255,255,255,.88); }
+.page-body { flex: 1; overflow-y: auto; padding: 0 16px calc(var(--bottom) + 20px + var(--kb, 0px)); touch-action: pan-y; font-size: 15px; line-height: 1.5; color: rgba(255,255,255,.88); }
 .page-body h3 { font-size: 13px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); font-weight: 400; margin: 18px 0 8px; }
 .page-body a { color: var(--accent); }
 

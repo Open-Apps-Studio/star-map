@@ -35,6 +35,7 @@ const MOON_KM: Record<string, number> = {
   Umbriel: 584.7, Ariel: 578.9, Miranda: 235.8, Triton: 1353.4,
 };
 const MODELS: Record<string, string> = { "NORAD 25544": "iss", "NORAD 20580": "hubble" };
+const MODEL_TITLES: Record<string, string> = { iss: "International Space Station", hubble: "Hubble Space Telescope" };
 
 function modelFor(obj: SweObj): string | null {
   for (const d of obj.designations()) if (MODELS[d]) return MODELS[d];
@@ -87,7 +88,7 @@ export async function open3D(obj: SweObj) {
 
   const box = $("view3d");
   box.hidden = false;
-  $("view3d-title").textContent = name;
+  $("view3d-title").textContent = model ? MODEL_TITLES[model] : name;
   $("view3d-close").innerHTML = icon(MDI.mdiClose);
   const mine = session;
   // A fresh canvas each time: the previous one's context was force-lost.
@@ -162,7 +163,8 @@ export async function open3D(obj: SweObj) {
     spin = sphere;
     if (body.rings) {
       const [r0, r1] = body.rings.map((k) => k / body.r);
-      const g = new THREE.RingGeometry(r0, r1, 128, 1);
+      // Enough radial segments for the ring texture's bands to show.
+      const g = new THREE.RingGeometry(r0, r1, 160, 48);
       // Map the ring texture radially (u from inner to outer edge).
       const uv = g.attributes.uv, p = g.attributes.position;
       for (let i = 0; i < uv.count; i++) {
@@ -170,7 +172,9 @@ export async function open3D(obj: SweObj) {
         uv.setXY(i, (d - r0) / (r1 - r0), 0.5);
       }
       const ringTex = tex("saturn_ring_alpha.png");
-      const ring = new THREE.Mesh(g, new THREE.MeshStandardMaterial({ map: ringTex, alphaMap: ringTex, transparent: true, side: THREE.DoubleSide, roughness: 1, depthWrite: false }));
+      // Unlit: the rings scatter sunlight brightly even when the Sun is
+      // close to their plane, which a plain diffuse material can't show.
+      const ring = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ map: ringTex, transparent: true, side: THREE.DoubleSide, depthWrite: false }));
       ring.rotation.x = -Math.PI / 2; // ring plane = equator (XZ)
       globe.add(ring);
       disposers.push(() => g.dispose());
@@ -213,10 +217,18 @@ export async function open3D(obj: SweObj) {
         return; // closed while loading
       }
       const root = gltf.scene;
-      // The NASA models are untextured: brushed metal modules, dark solar panels.
+      // NASA's ISS (B) file has a stray little dish ("bendedtru*",
+      // "pCylinder*") floating 25 m off the station; drop it.
+      const stray: THREE.Object3D[] = [];
+      root.traverse((n) => {
+        if (/^(bendedtru|pCylinder)/.test(n.name)) stray.push(n);
+      });
+      stray.forEach((n) => n.removeFromParent());
+      // The ISS model is untextured: give it metal modules and gold-brown
+      // solar arrays. (Hubble ships its own textures; keep those.)
       root.traverse((n) => {
         const mesh = n as THREE.Mesh;
-        if (!mesh.isMesh) return;
+        if (!mesh.isMesh || (mesh.material as THREE.MeshStandardMaterial).map) return;
         mesh.geometry.computeBoundingBox();
         const s = mesh.geometry.boundingBox!.getSize(new THREE.Vector3());
         const dims = [s.x, s.y, s.z].sort((a, b) => a - b);
@@ -233,9 +245,11 @@ export async function open3D(obj: SweObj) {
       wrap.scale.setScalar(4 / size);
       scene.add(wrap);
       ambient.intensity = 0.35;
-      camera.position.set(2.5, 1.6, 3.2);
+      // Fit the model (radius 2 after scaling) across the narrow side.
+      const hfov = 2 * Math.atan(Math.tan((camera.fov * D2R) / 2) * Math.min(1, camera.aspect));
+      camera.position.set(2.5, 1.6, 3.2).setLength((2 / Math.tan(hfov / 2)) * 1.05);
       controls.minDistance = 1;
-      controls.maxDistance = 20;
+      controls.maxDistance = 60;
       status.textContent = "";
     } catch {
       status.textContent = "";

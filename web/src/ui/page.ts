@@ -61,6 +61,39 @@ export function refreshPage() {
 
 export function initPages() {
   $("page-back").addEventListener("click", popPage);
+  initKeyboard();
+}
+
+/**
+ * Keyboard behaviour for the page's text fields. The WebView hides iOS's
+ * keyboard toolbar (no "Done"), so: Return or a tap anywhere else dismisses
+ * the keyboard, the focused field scrolls into view, and pages get room at
+ * the bottom while the keyboard is up.
+ */
+function initKeyboard() {
+  const isField = (el: Element | null): el is HTMLInputElement => !!el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA");
+  document.addEventListener(
+    "pointerdown",
+    (e) => {
+      const a = document.activeElement;
+      const t = e.target as HTMLElement;
+      if (isField(a) && t !== a && !t.closest("label")?.contains(a)) a.blur();
+    },
+    true,
+  );
+  document.addEventListener("keydown", (e) => {
+    const t = e.target as HTMLElement;
+    if (e.key === "Enter" && isField(t) && !t.closest("#search")) t.blur();
+  });
+  document.addEventListener("focusin", (e) => {
+    const t = e.target as HTMLElement;
+    if (isField(t) && t.closest("#page-body")) setTimeout(() => t.scrollIntoView({ block: "center", behavior: "smooth" }), 350);
+  });
+  const vv = window.visualViewport;
+  if (vv) {
+    const update = () => document.documentElement.style.setProperty("--kb", `${Math.max(0, window.innerHeight - vv.height)}px`);
+    vv.addEventListener("resize", update);
+  }
 }
 
 // ---------------------------------------------------------------- widgets

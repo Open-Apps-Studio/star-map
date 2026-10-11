@@ -1,1 +1,1 @@
-ISS (B) and Hubble (A) models: NASA 3D Resources (https://github.com/nasa/NASA-3D-Resources), public domain.
+ISS (B) and Hubble (A) models: NASA 3D Resources (https://github.com/nasa/NASA-3D-Resources), public domain. Draco compression removed with gltf-transform (copy) so three.js loads them without a Draco decoder.

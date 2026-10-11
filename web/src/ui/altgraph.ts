@@ -78,7 +78,7 @@ export function renderAltGraph(box: HTMLElement, obj: SweObj) {
     for (let i = 0; i < N; i++) {
       const col = bandColor((c.sun[i] + c.sun[i + 1]) / 2);
       if (col.endsWith(",0)")) continue;
-      bands += `<rect x="${(i / N) * W}" y="${top}" width="${W / N + 0.5}" height="${H - top - bottom}" fill="${col}"/>`;
+      bands += `<rect x="${(i / N) * W}" y="${top}" width="${W / N + 0.6}" height="${H - top - bottom}" fill="${col}" shape-rendering="crispEdges"/>`;
     }
     const pts = c.alt.map((a, i) => `${((i / N) * W).toFixed(1)},${y(a).toFixed(1)}`).join(" ");
     const ticks = [0, 6, 12, 18, 24]

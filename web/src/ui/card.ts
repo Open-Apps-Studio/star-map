@@ -14,6 +14,7 @@ import { favouriteFor } from "./search";
 import { activeOcular, fmtAngle, setOcular } from "../ocular";
 import { gotoScope, scope, onScopeChange } from "../telescope";
 import { open3D, can3D } from "./view3d";
+import { nextPasses } from "../events";
 
 const D2R = Math.PI / 180;
 let current: SweObj | null = null;
@@ -179,6 +180,8 @@ function distanceText(au: number): string {
 let rsCache: { v: number; utc: number; rows: [string, string][] } | null = null;
 function riseSetRows(obj: SweObj): [string, string][] {
   if (iconKind(obj) === "constellation") return [];
+  // Satellites go round many times a day: list the next passes instead.
+  if (iconKind(obj) === "satellite") return passRows(obj);
   if (rsCache && rsCache.v === obj.v && Math.abs(rsCache.utc - app.obs.utc) < 10 / 1440) return rsCache.rows;
   const rows: [string, string][] = [];
   const ttMinusUtc = app.obs.tt - app.obs.utc;
@@ -190,6 +193,18 @@ function riseSetRows(obj: SweObj): [string, string][] {
     if (vis[0].set != null) rows.push(["Sets", fmtTime(vis[0].set - ttMinusUtc)]);
   }
   rsCache = { v: obj.v, utc: app.obs.utc, rows };
+  return rows;
+}
+
+/** Next passes above 10° in the coming day (cached a minute). */
+let passCache: { v: number; utc: number; rows: [string, string][] } | null = null;
+function passRows(obj: SweObj): [string, string][] {
+  if (passCache && passCache.v === obj.v && Math.abs(passCache.utc - app.obs.utc) < 1 / 1440) return passCache.rows;
+  const passes = nextPasses(obj, app.obs.utc, 1, 3);
+  const rows: [string, string][] = passes.length
+    ? passes.map((p, i) => [i === 0 ? "Next passes" : "", `${fmtTime(p.rise)}–${fmtTime(p.set)}, up to ${Math.round(p.maxAlt)}°${p.visible ? ", visible" : ""}`])
+    : [["Next passes", "None above 10° in the next day"]];
+  passCache = { v: obj.v, utc: app.obs.utc, rows };
   return rows;
 }
 
@@ -232,7 +247,9 @@ export function updateFacts() {
     if (typeof phase === "number" && phase < 0.995) rows.push(["Illuminated", `${Math.round(phase * 100)}%`]);
   }
   const vmag = obj.getInfo("vmag");
-  if (typeof vmag === "number" && Number.isFinite(vmag)) rows.push(["Magnitude", vmag.toFixed(2)]);
+  // Satellites report 17 in Earth's shadow and 99 when not computable.
+  if (kind === "satellite" && typeof vmag === "number" && vmag >= 17) rows.push(["Magnitude", vmag < 50 ? "In Earth's shadow" : "—"]);
+  else if (typeof vmag === "number" && Number.isFinite(vmag) && vmag < 50) rows.push(["Magnitude", vmag.toFixed(2)]);
   const dist = obj.getInfo("distance");
   if (typeof dist === "number" && dist > 0) rows.push(["Distance", distanceText(dist)]);
   if (iconKind(obj) === "moon") rows.push(["Illuminated", `${Math.round((obj.getInfo("phase") as number) * 100)}%`]);
@@ -305,7 +322,8 @@ function zoomFor(kind: IconKind, obj?: SweObj): number {
     case "constellation": return 50;
     case "galaxy": case "nebula": case "cluster": return 8;
     case "moon": case "sun": return 0.9;
-    case "satellite": return 10;
+    // Wide enough to stay out of the DSS photo fade-in (10–20°).
+    case "satellite": return 22;
     default: return 20;
   }
 }
