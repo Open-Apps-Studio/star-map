@@ -4,6 +4,7 @@
  * (facts + Wikipedia summary when online), swipe down to dismiss.
  */
 import { pathShown, togglePath } from "./path";
+import { attachDsoPhoto } from "../dso-photo";
 import { $, app, haptic } from "../state";
 import { icon, MDI, objectIcon, kindFromOtype, type IconKind } from "../icons";
 import { azAlt, displayName, withObserverCopy, type SweObj } from "../engine";
@@ -104,6 +105,8 @@ export function showCard(obj: SweObj | null) {
   $("card-name").textContent = displayName(obj);
   $("card-type").textContent = typeLabel(obj);
   $("card-icon").innerHTML = iconFor(obj);
+  const kind = iconKind(obj);
+  if (kind === "galaxy" || kind === "nebula" || kind === "cluster") attachDsoPhoto($("card-icon"), obj, 64);
   if (!same) {
     card.classList.remove("expanded");
     $("card-wiki").innerHTML = "";

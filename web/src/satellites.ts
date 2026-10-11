@@ -109,6 +109,33 @@ async function refresh(bundledUrl: string): Promise<string> {
   return rows.join("\n") + "\n";
 }
 
+/** Satellites in the file the engine loaded (for pass predictions). */
+export interface SatInfo {
+  id: string;
+  name: string;
+  mag: number | null;
+}
+let loaded: SatInfo[] = [];
+export const loadedSatellites = () => loaded;
+
+/** Resolves once we know which satellite file the engine gets. */
+let decided: () => void = () => {};
+export const satelliteSourceDecided = new Promise<void>((r) => (decided = r));
+
+function remember(jsonl: string) {
+  loaded = [];
+  for (const line of jsonl.split("\n")) {
+    if (!line.trim()) continue;
+    try {
+      const d = JSON.parse(line);
+      const mag = d.model_data?.mag;
+      loaded.push({ id: `NORAD ${d.model_data.norad_number}`, name: d.short_name ?? d.names?.[0]?.replace(/^NAME /, "") ?? "", mag: typeof mag === "number" ? mag : null });
+    } catch {
+      /* skip */
+    }
+  }
+}
+
 const blobUrl = (jsonl: string) => URL.createObjectURL(new Blob([jsonl], { type: "application/x-ndjson" }));
 
 /**
@@ -116,9 +143,20 @@ const blobUrl = (jsonl: string) => URL.createObjectURL(new Blob([jsonl], { type:
  * download, else an older cache, else the bundled file.
  */
 export async function satelliteSource(bundledUrl: string): Promise<{ url: string; fresh: boolean; ageHours: number | null }> {
+  try {
+    return await pickSource(bundledUrl);
+  } finally {
+    decided();
+  }
+}
+
+async function pickSource(bundledUrl: string): Promise<{ url: string; fresh: boolean; ageHours: number | null }> {
   const cached = readCache();
   const age = cached ? Date.now() - cached.t : Infinity;
-  if (cached && age < MAX_AGE_MS) return { url: blobUrl(cached.jsonl), fresh: true, ageHours: age / 3600e3 };
+  if (cached && age < MAX_AGE_MS) {
+    remember(cached.jsonl);
+    return { url: blobUrl(cached.jsonl), fresh: true, ageHours: age / 3600e3 };
+  }
   try {
     const jsonl = await refresh(bundledUrl);
     try {
@@ -126,9 +164,13 @@ export async function satelliteSource(bundledUrl: string): Promise<{ url: string
     } catch {
       /* storage full or blocked: still use it this session */
     }
+    remember(jsonl);
     return { url: blobUrl(jsonl), fresh: true, ageHours: 0 };
   } catch {
-    if (cached) return { url: blobUrl(cached.jsonl), fresh: false, ageHours: age / 3600e3 };
+    if (cached) {
+      remember(cached.jsonl);
+      return { url: blobUrl(cached.jsonl), fresh: false, ageHours: age / 3600e3 };
+    }
     return { url: bundledUrl, fresh: false, ageHours: null };
   }
 }

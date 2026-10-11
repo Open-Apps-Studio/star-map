@@ -203,6 +203,11 @@ export function withObserverCopy<T>(stel: Stel, fn: (obs: any) => T): T {
 }
 
 /** Altitude (radians) of `obj` for an observer at its own time. */
+/** Recompute an observer after changing its time (getInfo does this itself; convertFrame doesn't). */
+export function updateObserver(stel: Stel, obs: any) {
+  (stel as any)._observer_update(obs.v, true);
+}
+
 export function altitudeFor(stel: Stel, obj: SweObj, obs: any): number {
   const p = stel.convertFrame(obs, "ICRF", "OBSERVED", obj.getInfo("radec", obs));
   return stel.anpm(stel.c2s(p)[1]);

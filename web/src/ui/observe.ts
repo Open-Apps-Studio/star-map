@@ -7,12 +7,14 @@
  * Tapping anything jumps the sky to that time and object.
  */
 import { $, app, haptic, planet, toast } from "../state";
-import { altitudeFor, withObserverCopy, type SweObj } from "../engine";
+import { altitudeFor, updateObserver, withObserverCopy, type SweObj } from "../engine";
 import { dateToMjd, fmtTime, mjdToDate, moonPhaseName, compass } from "../astro";
 import { computeEvents, loadMeteorShowers, nightOf, satellitePasses, type Night, type SkyEvent } from "../events";
-import { loadIndex } from "../search-index";
+import { loadIndex, type Hit } from "../search-index";
+import { loadedSatellites, satelliteSourceDecided } from "../satellites";
+import { attachDsoPhoto, dsoSize, photoUrlAt } from "../dso-photo";
 import { resolve } from "../catalog";
-import { icon, MDI, objectIcon, planetColor, planetGlyph, planetThumb } from "../icons";
+import { icon, kindFromOtype, MDI, objectIcon, planetColor, planetGlyph, planetThumb } from "../icons";
 import { closePages, el, pushPage, refreshPage, section, segmented } from "./page";
 import { updateClock } from "./time";
 import { alertsAvailable, eventKey, eventReminderTime, isReminded, toggleReminder } from "../alerts";
@@ -81,7 +83,13 @@ function planetBars(body: HTMLElement, night: Night) {
   }
   body.appendChild(wrap);
   const axis = el("div", "tn-axis");
-  axis.innerHTML = `<div></div><div>${[0, 0.25, 0.5, 0.75, 1].map((f) => `<span>${fmtTime(start + f * span)}</span>`).join("")}</div>`;
+  // Whole hours, spread evenly: "6p … 6a" (full clock times don't fit).
+  const ticks: string[] = [];
+  const hours = Math.round(span * 24);
+  const every = hours > 14 ? 3 : 2;
+  const first = Math.ceil(start * 24);
+  for (let h = first; h / 24 <= start + span; h += every) ticks.push(`<span style="left:${((h / 24 - start) / span) * 100}%">${fmtHour(h / 24)}</span>`);
+  axis.innerHTML = `<div></div><div class="tn-ticks">${ticks.join("")}</div>`;
   body.appendChild(axis);
 }
 
@@ -116,14 +124,23 @@ async function passesBox(body: HTMLElement, night: Night) {
     box.innerHTML = `<div class="row"><span class="row-sub">Satellite data unavailable.</span></div>`;
     return;
   }
-  // Let the page paint before the (synchronous) propagation work.
-  await new Promise((r) => setTimeout(r, 30));
-  const sats = index.filter((h) => h.icon === "satellite");
-  const stations = sats.filter((h) => /^(ISS|CSS \(TIANHE\)|HST)$/.test(h.name));
-  const bright = sats.filter((h) => typeof h.mag === "number" && !stations.includes(h)).sort((a, b) => (a.mag as number) - (b.mag as number)).slice(0, 25);
-  const list = [...stations, ...bright].map((h) => ({ id: h.ids[0], name: h.name === "ISS" ? "International Space Station" : h.name }));
+  // Orbits may still be downloading (first launch of the day): wait for them.
+  await Promise.race([satelliteSourceDecided, new Promise((r) => setTimeout(r, 20000))]);
+  const probe = loadedSatellites()[0]?.id ?? index.find((h) => h.icon === "satellite")?.ids[0];
+  for (let i = 0; probe && i < 50 && !app.stel.getObj(probe); i++) await new Promise((r) => setTimeout(r, 200));
+  if (!box.isConnected) return;
+  // Today's orbits when we have them (satellites.ts), else the bundled index.
+  const fresh = loadedSatellites();
+  const sats = fresh.length
+    ? fresh
+    : index.filter((h) => h.icon === "satellite").map((h) => ({ id: h.ids[0], name: h.name, mag: typeof h.mag === "number" ? h.mag : null }));
+  const STATIONS = new Set(["NORAD 25544", "NORAD 48274", "NORAD 20580"]); // ISS, Tiangong, Hubble
+  const stations = sats.filter((h) => STATIONS.has(h.id));
+  const bright = sats.filter((h) => h.mag != null && !STATIONS.has(h.id)).sort((a, b) => (a.mag as number) - (b.mag as number)).slice(0, 40);
+  const pretty: Record<string, string> = { "NORAD 25544": "International Space Station", "NORAD 48274": "Tiangong space station", "NORAD 20580": "Hubble Space Telescope" };
+  const list = [...stations, ...bright].map((h) => ({ id: h.id, name: pretty[h.id] ?? h.name }));
   // Stations at any brightness; everything else only when easy to see.
-  const stationIds = new Set(stations.map((h) => h.ids[0]));
+  const stationIds = STATIONS;
   const passes = satellitePasses(night, list, 17).filter((p) => stationIds.has(p.id) || p.mag <= 4).slice(0, 15);
   box.innerHTML = "";
   if (!passes.length) {
@@ -144,45 +161,76 @@ async function passesBox(body: HTMLElement, night: Night) {
   }
 }
 
-function highlightsBox(body: HTMLElement, night: Night) {
+/**
+ * Best deep-sky targets: positions come from the offline index, so the list
+ * doesn't depend on which sky tiles happen to be loaded.
+ */
+async function highlightsBox(body: HTMLElement, night: Night) {
   const box = section(body, "Best deep-sky targets", "Bright galaxies, nebulae and clusters well up while it's dark.");
+  box.innerHTML = `<div class="row"><span class="row-sub">Finding the best targets…</span></div>`;
+  const index = await loadIndex().catch(() => null);
+  if (!box.isConnected) return;
+  const byId = new Map<string, Hit>();
+  for (const h of index ?? []) if (h.icon === "galaxy" && h.ra != null) for (const id of h.ids) byId.set(id, h);
   const from = night.dark ?? night.sunset + 1 / 24, to = night.dawn ?? night.sunrise - 1 / 24;
-  const picks: { e: (typeof app.catalog)[number]; obj: SweObj; best: number; alt: number }[] = [];
+  const picks: { e: (typeof app.catalog)[number]; h: Hit; best: number; alt: number }[] = [];
   withObserverCopy(app.stel, (o) => {
     for (const e of app.catalog) {
       if (e.kind !== "deep-sky") continue;
-      const obj = resolve(app.stel, e);
-      if (!obj) continue;
+      const h = e.ids.map((id) => byId.get(id)).find(Boolean);
+      if (!h) continue;
+      const icrf = app.stel.s2c(h.ra!, h.de!);
       let best = from, alt = -90;
       for (let t = from; t <= to; t += 1 / 48) {
         o.utc = t;
-        const a = altitudeFor(app.stel, obj, o) * R2D;
+        updateObserver(app.stel, o);
+        const v = app.stel.convertFrame(o, "ICRF", "OBSERVED", icrf);
+        const a = Math.asin(Math.max(-1, Math.min(1, v[2] / Math.hypot(v[0], v[1], v[2])))) * R2D;
         if (a > alt) {
           alt = a;
           best = t;
         }
       }
-      if (alt > 35) picks.push({ e, obj, best, alt });
+      if (alt > 35) picks.push({ e, h, best, alt });
     }
   });
-  const vmag = (o: SweObj) => {
-    const v = o.getInfo("vmag");
-    return typeof v === "number" && Number.isFinite(v) ? v : 9;
-  };
-  picks.sort((a, b) => vmag(a.obj) - vmag(b.obj));
+  const mag = (h: Hit) => (typeof h.mag === "number" ? h.mag : 9);
+  picks.sort((a, b) => mag(a.h) - mag(b.h));
+  box.innerHTML = "";
   if (!picks.length) {
     box.innerHTML = `<div class="row"><span class="row-sub">No dark hours tonight at this latitude.</span></div>`;
     return;
   }
   for (const p of picks.slice(0, 10)) {
     const row = el("button", "row");
-    row.innerHTML = `<span class="pass-time"></span><span class="row-text"><span class="row-label"></span><span class="row-sub"></span></span>`;
+    const kind = p.h.otype ? kindFromOtype(p.h.otype) : "galaxy";
+    row.innerHTML = `<span class="obj-icon">${objectIcon(kind)}</span><span class="row-text"><span class="row-label"></span><span class="row-sub"></span></span><span class="pass-time"></span>`;
+    const obj = resolve(app.stel, p.e);
+    attachDsoPhoto(row.querySelector(".obj-icon")!, photoUrlAt(p.h.ra!, p.h.de!, dsoSize(obj), 48), 48);
     row.querySelector(".pass-time")!.textContent = fmtTime(p.best);
     row.querySelector(".row-label")!.textContent = p.e.name;
     row.querySelector(".row-sub")!.textContent = `${Math.round(p.alt)}° high at best${p.e.blurb ? ` · ${p.e.blurb}` : ""}`;
-    row.addEventListener("click", () => jump(p.best, p.obj));
+    row.addEventListener("click", () => jumpToHit(p.best, p.e, p.h));
     box.appendChild(row);
   }
+}
+
+/** Jump to a deep-sky object that may not be loaded yet: look there, then select it once its tile arrives. */
+function jumpToHit(mjd: number, e: (typeof app.catalog)[number], h: Hit) {
+  const now = resolve(app.stel, e);
+  if (now) return jump(mjd, now);
+  jump(mjd, null);
+  app.core.lock = 0;
+  app.stel.lookAt(app.stel.convertFrame(app.obs, "ICRF", "OBSERVED", app.stel.s2c(h.ra!, h.de!)), 0.8);
+  let tries = 0;
+  const attempt = () => {
+    const o = resolve(app.stel, e);
+    if (o) {
+      app.core.selection = o;
+      ($("center-btn") as HTMLButtonElement).click();
+    } else if (++tries < 25) setTimeout(attempt, 200);
+  };
+  setTimeout(attempt, 900);
 }
 
 // ---------------------------------------------------------------- conditions

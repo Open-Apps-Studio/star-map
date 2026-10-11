@@ -9,6 +9,7 @@ import { DEFAULTS, setSetting, settings, saveSettings, applySettings } from "../
 import { buttonRow, choiceList, navRow, pushPage, refreshPage, section, segmented, sliderRow, switchRow } from "./page";
 import { toast } from "../state";
 import { alertsAvailable, refreshAutoAlerts } from "../alerts";
+import { setAmbient } from "../ambient";
 
 interface Meta {
   skycultures: { id: string; name: string; region: string; art: boolean }[];
@@ -84,6 +85,9 @@ export async function openSettings() {
     };
     switchRow(box, "ISS flyovers", () => settings.alerts.iss, setAlert("iss"), "5 minutes before every visible pass");
     switchRow(box, "Sky events", () => settings.alerts.events, setAlert("events"), "Eclipses, meteor showers, full and new Moons, close conjunctions");
+
+    box = section(body, "Sound");
+    switchRow(box, "Ambient music", () => settings.ambient, setAmbient, "A calm soundtrack while you look up");
 
     box = section(body, "Stars");
     sliderRow(box, "Magnitude limit", {

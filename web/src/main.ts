@@ -5,7 +5,7 @@
  */
 import "./style.css";
 import { abs, addOnlineSources, azAlt, probeCdn, bootEngine, D2R, knownNames, type SweObj } from "./engine";
-import { applySettings, settings } from "./settings";
+import { applySettings, settings, updateStarLabels } from "./settings";
 import { initLocation, onFix } from "./location";
 import { setOcular, updateOcular } from "./ocular";
 import { onScopeMessage, updateScopeMarker } from "./telescope";
@@ -24,6 +24,7 @@ import { initMenu } from "./ui/menu";
 import { refreshAutoAlerts } from "./alerts";
 import { initAr, onCameraState } from "./ar";
 import { drawPath } from "./ui/path";
+import { initAmbient } from "./ambient";
 import { closePages } from "./ui/page";
 
 // ---------------------------------------------------------------- first view
@@ -149,6 +150,7 @@ function frame(t: number) {
     updateClock();
     updateFacts();
     onUnlock();
+    updateStarLabels();
   }
   requestAnimationFrame(frame);
 }
@@ -191,6 +193,7 @@ async function main() {
   initCard();
   initPointer();
   initAr();
+  initAmbient();
   initSearch();
   initMenu();
   init3D();

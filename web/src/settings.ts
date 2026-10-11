@@ -57,6 +57,8 @@ export interface Settings {
   manualLocation: { lat: number; lon: number; alt: number; name: string } | null;
   favourites: Favourite[];
   oculars: Ocular[];
+  /** Ambient soundtrack. */
+  ambient: boolean;
   /** Automatic notifications: visible ISS passes, and the big sky events. */
   alerts: { iss: boolean; events: boolean };
   /** Reminders the user set by hand (bell buttons), by key. */
@@ -94,6 +96,7 @@ export const DEFAULTS: Settings = {
       scopeFocal: 0, scopeAperture: 50, epFocal: 0, epAfov: 0, sensorW: 0, sensorH: 0, binoFov: 6.5, binoMag: 10,
     },
   ],
+  ambient: false,
   alerts: { iss: false, events: false },
   reminders: {},
   telescope: null,
@@ -146,9 +149,7 @@ export function applySettings() {
   // scales both so "brighter" also means "bigger".
   core.star_linear_scale = 0.8 * s.starBrightness;
   core.star_relative_scale = 1.1 * Math.sqrt(s.starBrightness);
-  // "Normal" names the first-magnitude stars at the default wide view, as
-  // Stellarium Mobile and Sky Guide do (the engine's 0 names none).
-  core.stars.hints_mag_offset = s.labels.stars + 2;
+  updateStarLabels(true);
   core.planets.hints_mag_offset = s.labels.planets;
   core.minor_planets.hints_mag_offset = s.labels.planets;
   core.comets.hints_mag_offset = s.labels.planets;
@@ -160,6 +161,23 @@ export function applySettings() {
   core.meteors.visible = s.meteors;
   loadSkyCulture(s.skyCulture);
   loadLandscape(s.landscape);
+}
+
+/**
+ * Star names: "Normal" names the first-magnitude stars on the wide default
+ * view, as Stellarium Mobile and Sky Guide do (the engine's own default names
+ * none there), but drops the boost when zoomed in, where it would label every
+ * faint numbered star. Called on each slow tick; only writes on a change.
+ */
+let starLabelBoost = NaN;
+export function updateStarLabels(force = false) {
+  const core = app.core;
+  if (!core) return;
+  const fovDeg = (core.fov as number) * (180 / Math.PI);
+  const boost = fovDeg > 60 ? 2 : fovDeg > 25 ? 1 : 0;
+  if (!force && boost === starLabelBoost) return;
+  starLabelBoost = boost;
+  core.stars.hints_mag_offset = settings.labels.stars + boost;
 }
 
 const favIndex = (ids: string[]) => settings.favourites.findIndex((f) => f.ids.some((id) => ids.includes(id)));
